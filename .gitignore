@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Desktop/VirtualSurfaces/VirtualSurfaces/x64/Debug
+/Desktop/VirtualSurfaces/.vs/VirtualSurfaces/v15
+/Desktop/VirtualSurfaces/x64/Debug
