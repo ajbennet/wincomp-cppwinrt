@@ -41,10 +41,16 @@ private:
 	com_ptr<ICompositionDrawingSurface> CreateSurface(Size size);
 	CompositionBrush CreateD2DBrush();
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
+	void DrawText(com_ptr<ID2D1DeviceContext>, POINT offset);
 
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice;
+
+	// The text to draw.
+	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
+	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
+	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
 	
 
 	Compositor m_compositor = nullptr;

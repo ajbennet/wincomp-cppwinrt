@@ -51,8 +51,52 @@ DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& composi
 void WinComp::Initialize(HWND hwnd)
 {
 	m_window = hwnd;
-	
+
+	// Setup the graphics devices
+	//
+	CreateDevice3D();
+	CreateDevice2D();
+	ComPtr<ICompositorInterop> interop;
+	_compositor.As(&interop);
+	interop->CreateGraphicsDevice(CreateDevice2D().Get(), &m_graphicsDevice);
+
+	winrt::check_hresult(
+		::DWriteCreateFactory(
+			DWRITE_FACTORY_TYPE_SHARED,
+			__uuidof(m_dWriteFactory),
+			reinterpret_cast<::IUnknown**>(m_dWriteFactory.put())
+		)
+	);
+
+	winrt::check_hresult(
+		m_dWriteFactory->CreateTextFormat(
+			L"Segoe UI",
+			nullptr,
+			DWRITE_FONT_WEIGHT_REGULAR,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			36.f,
+			L"en-US",
+			m_textFormat.put()
+		)
+	);
+
+	Rect windowBounds = {100,100,100,100};
+	std::wstring text{ L"Hello, World!" };
+
+	winrt::check_hresult(
+		m_dWriteFactory->CreateTextLayout(
+			text.c_str(),
+			(uint32_t)text.size(),
+			m_textFormat.get(),
+			windowBounds.Width,
+			windowBounds.Height,
+			m_textLayout.put()
+		)
+	);
 }
+
+
 
 void WinComp::PrepareVisuals()
 {
@@ -70,6 +114,8 @@ void WinComp::PrepareVisuals()
 	AddVisual(visuals, 220.0f, 100.0f);
 	AddVisual(visuals, 100.0f, 220.0f);
 	AddVisual(visuals, 220.0f, 220.0f);
+
+	AddD2DVisual(visuals, 330.0f, 330.0f);
 }
 
 void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
@@ -199,15 +245,42 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 			// D2D1_INTERPOLATION_MODE_LINEAR,
 			// &source
 		 //);
+
+		 DrawText(target, offset);
+
+
 	 }
 	 surfaceInterop->EndDraw();
 
-	 CompositionSurfaceBrush surfaceBrush = m_compositor.CreateSurfaceBrush();
+	 ICompositionSurface surface = surfaceInterop.as<ICompositionSurface>();
 
-	 com_ptr<ICompositionSurface> surface = (com_ptr<ICompositionSurface>)surfaceInterop;
+	 CompositionSurfaceBrush surfaceBrush = m_compositor.CreateSurfaceBrush(surface);
+
 	 
-	 surfaceBrush.Surface = surface;
+	 //surfaceBrush.Surface = surface;
 	 CompositionBrush retVal = (CompositionBrush)surfaceBrush;
 	 return retVal;
  }
+
+ // Renders the text into our composition surface
+ void WinComp::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset)
+ {
+	 
+		 d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+
+		 // Create a solid color brush for the text. A more sophisticated application might want
+		 // to cache and reuse a brush across all text elements instead, taking care to recreate
+		 // it in the event of device removed.
+		 winrt::com_ptr<::ID2D1SolidColorBrush> brush;
+		 winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+			 D2D1::ColorF(D2D1::ColorF::Black, 1.0f), brush.put()));
+
+		 // Draw the line of text at the specified offset, which corresponds to the top-left
+		 // corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
+		 // context; this has already been done for us by the composition API.
+		 d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)offset.x, (float)offset.y), m_textLayout.get(),
+			 brush.get());
+
+ }
+
 
