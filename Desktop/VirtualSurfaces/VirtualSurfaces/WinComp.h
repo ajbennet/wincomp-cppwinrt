@@ -39,13 +39,16 @@ private:
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
 	com_ptr<ICompositionDrawingSurface> CreateSurface(Size size);
-	CompositionBrush CreateD2DBrush();
+	
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void DrawText(com_ptr<ID2D1DeviceContext>, POINT offset);
+	CompositionBrush CreateD2DBrush();
 
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
-	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice;
+	com_ptr<Windows::UI::Composition::ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
+	com_ptr<ID2D1DeviceContext> m_D2DContext;
+
 
 	// The text to draw.
 	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;

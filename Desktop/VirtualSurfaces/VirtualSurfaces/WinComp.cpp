@@ -50,16 +50,34 @@ DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& composi
 
 void WinComp::Initialize(HWND hwnd)
 {
+	namespace abi = ABI::Windows::UI::Composition;
 	m_window = hwnd;
 
-	// Setup the graphics devices
-	//
-	CreateDevice3D();
-	CreateDevice2D();
-	ComPtr<ICompositorInterop> interop;
-	_compositor.As(&interop);
-	interop->CreateGraphicsDevice(CreateDevice2D().Get(), &m_graphicsDevice);
+	//// Setup the graphics devices
+	////
+	//CreateDevice3D();
+	//CreateDevice2D();
+	//ComPtr<ICompositorInterop> interop;
+	//_compositor.As(&interop);
+	//interop->CreateGraphicsDevice(CreateDevice2D().Get(), &m_graphicsDevice);
 
+
+
+	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
+	com_ptr<ID3D11Device> const& device = CreateDevice();
+	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
+
+	com_ptr<ID2D1Device> d2device;
+	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
+
+	check_hresult(d2device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, m_D2DContext.put()));
+	Compositor compositor;
+	m_compositor = compositor;
+	com_ptr<abi::ICompositorInterop> interopCompositor = compositor.as<abi::ICompositorInterop>();
+	//CompositionGraphicsDevice graphicsDevice;
+	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
+
+	
 	winrt::check_hresult(
 		::DWriteCreateFactory(
 			DWRITE_FACTORY_TYPE_SHARED,
@@ -100,9 +118,8 @@ void WinComp::Initialize(HWND hwnd)
 
 void WinComp::PrepareVisuals()
 {
-	Compositor compositor;
-	m_target = CreateDesktopWindowTarget(compositor, m_window);
-	m_compositor = compositor;
+	
+	m_target = CreateDesktopWindowTarget(m_compositor, m_window);
 	auto root = m_compositor.CreateSpriteVisual();
 	root.RelativeSizeAdjustment({ 1.0f, 1.0f });
 	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
@@ -193,43 +210,29 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
  com_ptr<ICompositionDrawingSurface> WinComp::CreateSurface(Size size)
 {
 	com_ptr<ICompositionDrawingSurface> surface;
-	m_graphicsDevice->CreateDrawingSurface(
+	check_hresult(m_graphicsDevice->CreateDrawingSurface(
 		size,
 		DirectXPixelFormat::R8G8B8A8UIntNormalized,
 		DirectXAlphaMode::Premultiplied,
 		surface.put_void()
-	);
+	));
 
 	return surface;
 }
 
- CompositionBrush WinComp::CreateD2DBrush()
+ CompositionBrush WinComp::CreateD2DBrush( )
  {
 	 namespace abi = ABI::Windows::UI::Composition;
-
 	 
-	 com_ptr<ID2D1Factory1> const& factory = CreateFactory();
-	 com_ptr<ID3D11Device> const& device = CreateDevice();
-	 com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
-
-	 com_ptr<ID2D1Device> d2device;
-	 check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
-
-	 com_ptr<ID2D1DeviceContext> target;
-	 check_hresult(d2device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, target.put()));
-
-
 	 Size size;
 	 size.Width = 100;
 	 size.Height = 100;
 	 auto surfaceInterop = CreateSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
-
-
 	 com_ptr<ID3D11Texture2D> d3dTexture;
 
 	 POINT offset;
-	 surfaceInterop->BeginDraw(nullptr, __uuidof(target),(void **) target.put(), &offset);
+	 surfaceInterop->BeginDraw(nullptr, __uuidof(m_D2DContext),(void **)m_D2DContext.put(), &offset);
 	 {
 		 D2D1_RECT_F source;
 		 source.left = static_cast<float>(offset.x);
@@ -238,15 +241,7 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 		 source.bottom = static_cast<float>(source.top + size.Height);
 
 
-		 //target->DrawBitmap(
-			// bitmap.Get(),
-			// &source,
-			// 1.0,
-			// D2D1_INTERPOLATION_MODE_LINEAR,
-			// &source
-		 //);
-
-		 DrawText(target, offset);
+		DrawText(m_D2DContext, offset);
 
 
 	 }
