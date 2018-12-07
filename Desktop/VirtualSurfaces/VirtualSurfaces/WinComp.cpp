@@ -70,7 +70,7 @@ void WinComp::Initialize(HWND hwnd)
 	com_ptr<ID2D1Device> d2device;
 	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
 
-	check_hresult(d2device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, m_D2DContext.put()));
+	//check_hresult(d2device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, m_D2DContext.put()));
 	Compositor compositor;
 	m_compositor = compositor;
 	com_ptr<abi::ICompositorInterop> interopCompositor = compositor.as<abi::ICompositorInterop>();
@@ -140,6 +140,11 @@ void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
 	auto compositor = visuals.Compositor();
 	auto visual = compositor.CreateSpriteVisual();
 	visual.Brush(CreateD2DBrush());
+
+	visual.Size({ 100.0f, 100.0f });
+	visual.Offset({ x, y, 0.0f, });
+
+	visuals.InsertAtTop(visual);
 }
 
 void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
@@ -229,10 +234,13 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 	 size.Height = 100;
 	 auto surfaceInterop = CreateSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
-	 com_ptr<ID3D11Texture2D> d3dTexture;
+	 // Begin our update of the surface pixels. If this is our first update, we are required
+	 // to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+	 // any time we make an update we touch the entire surface, so we always pass nullptr).
+	 winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
 
 	 POINT offset;
-	 surfaceInterop->BeginDraw(nullptr, __uuidof(m_D2DContext),(void **)m_D2DContext.put(), &offset);
+	 surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext),(void **)d2dDeviceContext.put(), &offset);
 	 {
 		 D2D1_RECT_F source;
 		 source.left = static_cast<float>(offset.x);
@@ -241,7 +249,7 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 		 source.bottom = static_cast<float>(source.top + size.Height);
 
 
-		DrawText(m_D2DContext, offset);
+		DrawText(d2dDeviceContext, offset);
 
 
 	 }
