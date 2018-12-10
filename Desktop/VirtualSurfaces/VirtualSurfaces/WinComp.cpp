@@ -225,14 +225,6 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
  {
 	 auto graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
 
-	 //com_ptr<ICompositionVirtualDrawingSurface> surface;
-	 /*check_hresult(graphicsDevice2->CreateVirtualDrawingSurface(
-		 size,
-		 DirectXPixelFormat::B8G8R8A8UIntNormalized,
-		 DirectXAlphaMode::Premultiplied,
-		 surface.put_void()
-	 ));*/
-
 	 auto surface = graphicsDevice2.CreateVirtualDrawingSurface(
 		 size,
 		 DirectXPixelFormat::B8G8R8A8UIntNormalized,
@@ -245,10 +237,17 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
  {
 	 namespace abi = ABI::Windows::UI::Composition;
 	 
-	 Size size;
+	/* Size size;
 	 size.Width = 100;
 	 size.Height = 100;
-	 auto surfaceInterop = CreateSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
+
+
+	 auto surfaceInterop = CreateSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();*/
+	 SizeInt32 size;
+	 size.Width = 100;
+	 size.Height = 100;
+
+	 auto surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
 	 // Begin our update of the surface pixels. If this is our first update, we are required
 	 // to specify the entire surface, which nullptr is shorthand for (but, as it works out,
