@@ -52,14 +52,7 @@ void WinComp::Initialize(HWND hwnd)
 {
 	namespace abi = ABI::Windows::UI::Composition;
 	m_window = hwnd;
-
-	//// Setup the graphics devices
-	////
-	//CreateDevice3D();
-	//CreateDevice2D();
-	//ComPtr<ICompositorInterop> interop;
-	//_compositor.As(&interop);
-	//interop->CreateGraphicsDevice(CreateDevice2D().Get(), &m_graphicsDevice);
+	
 
 
 
@@ -77,6 +70,8 @@ void WinComp::Initialize(HWND hwnd)
 	//CompositionGraphicsDevice graphicsDevice;
 	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 
+	//check_hresult(interopCompositor->CreateGraphicsDevice2(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice2**>(put_abi(m_graphicsDevice2))));
+	com_ptr<abi::ICompositionGraphicsDevice2> graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
 	
 	winrt::check_hresult(
 		::DWriteCreateFactory(
@@ -225,6 +220,20 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 	return surface;
 }
 
+
+ com_ptr<ICompositionDrawingSurface> WinComp::CreateVirtualDrawingSurface(struct_Windows_Graphics_SizeInt32 size)
+ {
+	 com_ptr<ICompositionVirtualDrawingSurface> surface;
+	 check_hresult(m_graphicsDevice2->CreateVirtualDrawingSurface(
+		 size,
+		 DirectXPixelFormat::B8G8R8A8UIntNormalized,
+		 DirectXAlphaMode::Premultiplied,
+		 surface.put_void()
+	 ));
+
+	 return surface;
+ }
+
  CompositionBrush WinComp::CreateD2DBrush( )
  {
 	 namespace abi = ABI::Windows::UI::Composition;
@@ -269,7 +278,7 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
  void WinComp::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset)
  {
 	 
-		 d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+		 d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
 
 		 // Create a solid color brush for the text. A more sophisticated application might want
 		 // to cache and reuse a brush across all text elements instead, taking care to recreate
