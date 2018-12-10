@@ -42,7 +42,7 @@ private:
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
 	com_ptr<ICompositionDrawingSurface> CreateSurface(Size size);
-	com_ptr<ICompositionDrawingSurface> CreateVirtualDrawingSurface(struct_Windows_Graphics_SizeInt32 size);
+	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void DrawText(com_ptr<ID2D1DeviceContext>, POINT offset);
 	CompositionBrush CreateD2DBrush();
@@ -51,7 +51,7 @@ private:
 	HWND m_window = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 
-	com_ptr<ICompositionGraphicsDevice2> m_graphicsDevice2 = nullptr;
+	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
 	com_ptr<ID2D1DeviceContext> m_D2DContext;
 
 

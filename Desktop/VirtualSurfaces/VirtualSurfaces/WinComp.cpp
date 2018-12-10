@@ -71,7 +71,7 @@ void WinComp::Initialize(HWND hwnd)
 	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 
 	//check_hresult(interopCompositor->CreateGraphicsDevice2(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice2**>(put_abi(m_graphicsDevice2))));
-	com_ptr<abi::ICompositionGraphicsDevice2> graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
+	
 	
 	winrt::check_hresult(
 		::DWriteCreateFactory(
@@ -221,15 +221,22 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 }
 
 
- com_ptr<ICompositionDrawingSurface> WinComp::CreateVirtualDrawingSurface(struct_Windows_Graphics_SizeInt32 size)
+ CompositionDrawingSurface WinComp::CreateVirtualDrawingSurface(SizeInt32 size)
  {
-	 com_ptr<ICompositionVirtualDrawingSurface> surface;
-	 check_hresult(m_graphicsDevice2->CreateVirtualDrawingSurface(
+	 auto graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
+
+	 //com_ptr<ICompositionVirtualDrawingSurface> surface;
+	 /*check_hresult(graphicsDevice2->CreateVirtualDrawingSurface(
 		 size,
 		 DirectXPixelFormat::B8G8R8A8UIntNormalized,
 		 DirectXAlphaMode::Premultiplied,
 		 surface.put_void()
-	 ));
+	 ));*/
+
+	 auto surface = graphicsDevice2.CreateVirtualDrawingSurface(
+		 size,
+		 DirectXPixelFormat::B8G8R8A8UIntNormalized,
+		 DirectXAlphaMode::Premultiplied);
 
 	 return surface;
  }
