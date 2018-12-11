@@ -54,8 +54,6 @@ void WinComp::Initialize(HWND hwnd)
 	m_window = hwnd;
 	
 
-
-
 	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
 	com_ptr<ID3D11Device> const& device = CreateDevice();
 	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
@@ -67,12 +65,8 @@ void WinComp::Initialize(HWND hwnd)
 	Compositor compositor;
 	m_compositor = compositor;
 	com_ptr<abi::ICompositorInterop> interopCompositor = compositor.as<abi::ICompositorInterop>();
-	//CompositionGraphicsDevice graphicsDevice;
 	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 
-	//check_hresult(interopCompositor->CreateGraphicsDevice2(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice2**>(put_abi(m_graphicsDevice2))));
-	
-	
 	winrt::check_hresult(
 		::DWriteCreateFactory(
 			DWRITE_FACTORY_TYPE_SHARED,
@@ -108,7 +102,6 @@ void WinComp::Initialize(HWND hwnd)
 		)
 	);
 }
-
 
 
 void WinComp::PrepareVisuals()
@@ -244,8 +237,8 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 
 	 auto surfaceInterop = CreateSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();*/
 	 SizeInt32 size;
-	 size.Width = 100;
-	 size.Height = 100;
+	 size.Width = TILESIZE * 2;
+	 size.Height = TILESIZE * 2;
 
 	 auto surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
@@ -260,8 +253,8 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 		 D2D1_RECT_F source;
 		 source.left = static_cast<float>(offset.x);
 		 source.top = static_cast<float>(offset.y);
-		 source.right = static_cast<float>(source.left + size.Width);
-		 source.bottom = static_cast<float>(source.top + size.Height);
+		 source.right = static_cast<float>(source.left + TILESIZE);
+		 source.bottom = static_cast<float>(source.top + TILESIZE);
 
 
 		DrawText(d2dDeviceContext, offset);

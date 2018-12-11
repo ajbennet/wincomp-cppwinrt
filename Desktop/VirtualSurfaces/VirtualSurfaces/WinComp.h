@@ -15,8 +15,6 @@ using namespace Windows::Foundation;
 using namespace Windows::Foundation::Numerics;
 
 
-
-
 class WinComp
 {
 #pragma region Singleton Pattern
@@ -46,6 +44,7 @@ private:
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void DrawText(com_ptr<ID2D1DeviceContext>, POINT offset);
 	CompositionBrush CreateD2DBrush();
+	const int TILESIZE = 250;
 
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
@@ -62,6 +61,5 @@ private:
 	
 
 	Compositor m_compositor = nullptr;
-
 };
 
