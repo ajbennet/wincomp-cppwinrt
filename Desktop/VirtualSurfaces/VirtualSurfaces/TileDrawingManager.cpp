@@ -4,12 +4,17 @@
 
 TileDrawingManager::TileDrawingManager()
 {
+	
 }
 
 
 TileDrawingManager::~TileDrawingManager()
 {
 }
+
+void TileDrawingManager::setRenderer(DirectXTileRenderer renderer) {
+	currentRenderer = renderer;
+};
 
 wstring TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 {

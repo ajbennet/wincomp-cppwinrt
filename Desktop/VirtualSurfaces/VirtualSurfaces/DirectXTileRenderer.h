@@ -1,16 +1,20 @@
 #pragma once
-#include "TileRenderer.h";
+
 #include "stdafx.h"
 
+using namespace winrt;
 using namespace Windows::UI;
+using namespace winrt;
+using namespace Windows::Foundation;
 
-class DirectXTileRenderer:TileRenderer
+
+class DirectXTileRenderer
 {
 public:
 	DirectXTileRenderer();
 	~DirectXTileRenderer();
-	void DrawTile(Rect rect, int tileRow, int tileColumn);
-	void Trim(Rect trimRect);
+	void DrawTile(Rect rect, int tileRow, int tileColumn) ;
+	void Trim(Rect trimRect) ;
 
 private:
 	int random(int maxValue);

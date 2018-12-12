@@ -33,9 +33,6 @@
     <ClInclude Include="TileDrawingManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TileRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DirectXTileRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>

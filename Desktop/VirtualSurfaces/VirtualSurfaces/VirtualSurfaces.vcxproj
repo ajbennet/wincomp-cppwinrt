@@ -157,7 +157,6 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="TileDrawingManager.h" />
-    <ClInclude Include="TileRenderer.h" />
     <ClInclude Include="WinComp.h" />
   </ItemGroup>
   <ItemGroup>

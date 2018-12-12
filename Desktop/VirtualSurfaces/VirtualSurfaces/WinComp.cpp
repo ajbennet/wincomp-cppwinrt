@@ -52,6 +52,9 @@ void WinComp::Initialize(HWND hwnd)
 {
 	namespace abi = ABI::Windows::UI::Composition;
 	m_window = hwnd;
+	DirectXTileRenderer dxRenderer;
+	m_TileDrawingManager.setRenderer(dxRenderer);
+	
 
 	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
 	com_ptr<ID3D11Device> const& device = CreateDevice();
@@ -113,11 +116,6 @@ void WinComp::PrepareVisuals()
 
 	m_target.Root(root);
 	auto visuals = root.Children();
-
-	//AddVisual(visuals, 100.0f, 100.0f);
-	//AddVisual(visuals, 220.0f, 100.0f);
-	//AddVisual(visuals, 100.0f, 220.0f);
-	//AddVisual(visuals, 220.0f, 220.0f);
 
 	AddD2DVisual(visuals, 330.0f, 330.0f);
 	DrawTile();

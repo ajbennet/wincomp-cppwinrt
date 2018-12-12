@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "TileDrawingManager.h"
 
 using namespace winrt;
 using namespace winrt::impl;
@@ -54,13 +55,12 @@ private:
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
 	com_ptr<ID2D1DeviceContext> m_D2DContext;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
-
+	TileDrawingManager m_TileDrawingManager;
 
 	// The text to draw.
 	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
 	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
 	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
-	
 
 	Compositor m_compositor = nullptr;
 };
