@@ -44,7 +44,8 @@ private:
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void DrawText(com_ptr<ID2D1DeviceContext>, POINT offset);
 	CompositionBrush CreateD2DBrush();
-	const int TILESIZE = 250;
+	void DrawTile();
+	const int TILESIZE = 100;
 
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
@@ -52,6 +53,7 @@ private:
 
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
 	com_ptr<ID2D1DeviceContext> m_D2DContext;
+	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
 
 
 	// The text to draw.

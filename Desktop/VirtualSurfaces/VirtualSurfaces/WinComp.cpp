@@ -52,7 +52,6 @@ void WinComp::Initialize(HWND hwnd)
 {
 	namespace abi = ABI::Windows::UI::Composition;
 	m_window = hwnd;
-	
 
 	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
 	com_ptr<ID3D11Device> const& device = CreateDevice();
@@ -89,7 +88,7 @@ void WinComp::Initialize(HWND hwnd)
 	);
 
 	Rect windowBounds = {100,100,100,100};
-	std::wstring text{ L"Hello, World!" };
+	std::wstring text{ L"TIle 1,1" };
 
 	winrt::check_hresult(
 		m_dWriteFactory->CreateTextLayout(
@@ -115,12 +114,13 @@ void WinComp::PrepareVisuals()
 	m_target.Root(root);
 	auto visuals = root.Children();
 
-	AddVisual(visuals, 100.0f, 100.0f);
-	AddVisual(visuals, 220.0f, 100.0f);
-	AddVisual(visuals, 100.0f, 220.0f);
-	AddVisual(visuals, 220.0f, 220.0f);
+	//AddVisual(visuals, 100.0f, 100.0f);
+	//AddVisual(visuals, 220.0f, 100.0f);
+	//AddVisual(visuals, 100.0f, 220.0f);
+	//AddVisual(visuals, 220.0f, 220.0f);
 
 	AddD2DVisual(visuals, 330.0f, 330.0f);
+	DrawTile();
 }
 
 void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
@@ -143,9 +143,9 @@ void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
 	static Color colors[] =
 	{
 		{ 0xDC, 0x5B, 0x9B, 0xD5 },
-	{ 0xDC, 0xFF, 0xC0, 0x00 },
-	{ 0xDC, 0xED, 0x7D, 0x31 },
-	{ 0xDC, 0x70, 0xAD, 0x47 },
+		{ 0xDC, 0xFF, 0xC0, 0x00 },
+		{ 0xDC, 0xED, 0x7D, 0x31 },
+		{ 0xDC, 0x70, 0xAD, 0x47 },
 	};
 
 	static unsigned last = 0;
@@ -240,15 +240,31 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 	 size.Width = TILESIZE * 2;
 	 size.Height = TILESIZE * 2;
 
-	 auto surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
+	 m_surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
+	 
+	 ICompositionSurface surface = m_surfaceInterop.as<ICompositionSurface>();
+
+	 CompositionSurfaceBrush surfaceBrush = m_compositor.CreateSurfaceBrush(surface);
+	 surfaceBrush.Stretch (CompositionStretch::None);
+
+	 surfaceBrush.HorizontalAlignmentRatio(0);
+	 surfaceBrush.VerticalAlignmentRatio(0);
+	// surfaceBrush.TransformMatrix = System::Numerics::Matrix3x2.CreateTranslation(20.0f, 20.0f);
+
+	//surfaceBrush.Surface = surface;
+	 CompositionBrush retVal = (CompositionBrush)surfaceBrush;
+	 return retVal;
+ }
+
+ void WinComp::DrawTile() {
 	 // Begin our update of the surface pixels. If this is our first update, we are required
 	 // to specify the entire surface, which nullptr is shorthand for (but, as it works out,
 	 // any time we make an update we touch the entire surface, so we always pass nullptr).
 	 winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
 
 	 POINT offset;
-	 surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext),(void **)d2dDeviceContext.put(), &offset);
+	 m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset);
 	 {
 		 D2D1_RECT_F source;
 		 source.left = static_cast<float>(offset.x);
@@ -257,20 +273,11 @@ com_ptr<ID3D11Device> WinComp::CreateDevice()
 		 source.bottom = static_cast<float>(source.top + TILESIZE);
 
 
-		DrawText(d2dDeviceContext, offset);
+		 DrawText(d2dDeviceContext, offset);
 
 
 	 }
-	 surfaceInterop->EndDraw();
-
-	 ICompositionSurface surface = surfaceInterop.as<ICompositionSurface>();
-
-	 CompositionSurfaceBrush surfaceBrush = m_compositor.CreateSurfaceBrush(surface);
-
-	 
-	 //surfaceBrush.Surface = surface;
-	 CompositionBrush retVal = (CompositionBrush)surfaceBrush;
-	 return retVal;
+	 m_surfaceInterop->EndDraw();
  }
 
  // Renders the text into our composition surface
