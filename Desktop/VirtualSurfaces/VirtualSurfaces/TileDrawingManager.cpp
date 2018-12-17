@@ -11,6 +11,11 @@ TileDrawingManager::~TileDrawingManager()
 {
 }
 
+void TileDrawingManager::SetRenderer(TileRenderer renderer)
+{
+	currentRenderer = renderer;
+}
+
 wstring TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 {
 	currentPosition = currentPosition;

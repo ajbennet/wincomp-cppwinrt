@@ -12,7 +12,7 @@ DirectXTileRenderer::~DirectXTileRenderer()
 {
 }
 
-void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
+void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn) 
 {
 	Color randomColor = ColorHelper::FromArgb((byte)255, (byte)random(256), (byte)random(256), (byte)random(256));
 	/*using (var drawingSession = CanvasComposition.CreateDrawingSession(drawingSurface, rect))

@@ -14,6 +14,7 @@ public:
 	~TileDrawingManager();
 	wstring UpdateVisibleRegion(float3 currentPosition);
 	void UpdateViewportSize(Size newSize);
+	void SetRenderer(TileRenderer renderer);
 
 private:
 	const int TILESIZE = 250;
