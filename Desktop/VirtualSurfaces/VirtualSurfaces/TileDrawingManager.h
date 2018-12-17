@@ -1,6 +1,6 @@
 #pragma once
 #include "stdafx.h";
-#include "TileRenderer.h";
+#include "DirectXTileRenderer.h"
 
 using namespace std;
 using namespace winrt;
@@ -14,7 +14,9 @@ public:
 	~TileDrawingManager();
 	wstring UpdateVisibleRegion(float3 currentPosition);
 	void UpdateViewportSize(Size newSize);
-	void SetRenderer(TileRenderer renderer);
+	void setRenderer(DirectXTileRenderer* renderer);
+	DirectXTileRenderer* getRenderer();
+	void DrawTile(int row, int column);
 
 private:
 	const int TILESIZE = 250;
@@ -29,12 +31,11 @@ private:
 	int horizontalVisibleTileCount;
 	int verticalVisibleTileCount;
 	float3 currentPosition;
-	TileRenderer currentRenderer;
+	DirectXTileRenderer* currentRenderer;
 	int DrawAheadTileCount;
 	Rect GetRectForTile(int row, int column);
 	Rect GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
 	void DrawVisibleTiles();
-	void DrawTile(int row, int column);
 	void Trim(int leftColumn, int topRow, int rightColumn, int bottomRow);
 
 };

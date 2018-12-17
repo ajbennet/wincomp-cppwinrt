@@ -4,6 +4,7 @@
 
 TileDrawingManager::TileDrawingManager()
 {
+	
 }
 
 
@@ -11,9 +12,12 @@ TileDrawingManager::~TileDrawingManager()
 {
 }
 
-void TileDrawingManager::SetRenderer(TileRenderer renderer)
-{
+void TileDrawingManager::setRenderer(DirectXTileRenderer* renderer) {
 	currentRenderer = renderer;
+};
+DirectXTileRenderer* TileDrawingManager::getRenderer()
+{
+	return currentRenderer;
 }
 
 wstring TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
@@ -129,7 +133,7 @@ void TileDrawingManager::DrawVisibleTiles()
 
 void TileDrawingManager::DrawTile(int row, int column)
 {
-	currentRenderer.DrawTile(GetRectForTile(row, column), row, column); //index's are 0 based
+	currentRenderer->DrawTile(GetRectForTile(row, column), row, column); //index's are 0 based
 }
 
 void TileDrawingManager::Trim(int leftColumn, int topRow, int rightColumn, int bottomRow)
@@ -140,7 +144,7 @@ void TileDrawingManager::Trim(int leftColumn, int topRow, int rightColumn, int b
 		rightColumn - leftColumn + 1,
 		bottomRow - topRow + 1);
 
-	currentRenderer.Trim(trimRect);
+	currentRenderer->Trim(trimRect);
 
 	drawnLeftTileColumn = leftColumn;
 	drawnRightTileColumn = rightColumn;
