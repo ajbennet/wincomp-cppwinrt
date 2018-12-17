@@ -15,34 +15,6 @@ DirectXTileRenderer::~DirectXTileRenderer()
 {
 }
 
-void DirectXTileRenderer::Initialize() {
-	namespace abi = ABI::Windows::UI::Composition;
-
-	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
-	com_ptr<ID3D11Device> const& device = CreateDevice();
-	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
-
-	//TODO: move this out, so renderer is abstracted completely
-	m_compositor = WinComp::GetInstance()->m_compositor;
-
-	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
-	com_ptr<ID2D1Device> d2device;
-	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
-	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
-
-	InitializeTextLayout();
-}
-
-
-CompositionBrush DirectXTileRenderer::getSurfaceBrush()
-{
-	if (m_CompositionBrush == nullptr) {
-		m_CompositionBrush = CreateD2DBrush();
-	}
-	return m_CompositionBrush;
-
-}
-
 void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 {
 	Color randomColor = ColorHelper::FromArgb(255, random(256), random(256), random(256));
