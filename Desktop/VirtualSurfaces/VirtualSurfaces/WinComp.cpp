@@ -35,7 +35,7 @@ DispatcherQueueController WinComp::EnsureDispatcherQueue()
 	check_hresult(CreateDispatcherQueueController(options, reinterpret_cast<abi::IDispatcherQueueController**>(put_abi(controller))));
 
 	return controller;
-	
+
 }
 
 DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& compositor, HWND window)
@@ -74,7 +74,7 @@ void WinComp::PrepareVisuals()
 	auto visuals = root.Children();
 
 	AddD2DVisual(visuals, 330.0f, 330.0f);
-	m_TileDrawingManager.DrawTile(0,0);
+	m_TileDrawingManager.DrawTile(0, 0);
 }
 
 void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
@@ -112,6 +112,6 @@ void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
 }
 
 
- 
 
- 
+
+

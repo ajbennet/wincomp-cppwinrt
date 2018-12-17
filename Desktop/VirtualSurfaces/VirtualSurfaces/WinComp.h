@@ -42,7 +42,7 @@ private:
 
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
-	TileDrawingManager m_TileDrawingManager ;
+	TileDrawingManager m_TileDrawingManager;
 
 };
 

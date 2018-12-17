@@ -19,7 +19,7 @@ public:
 	DirectXTileRenderer();
 	~DirectXTileRenderer();
 	void Initialize();
-	void DrawTile(Rect rect, int tileRow, int tileColumn) ;
+	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
 	CompositionBrush getSurfaceBrush();
 
@@ -32,7 +32,7 @@ private:
 	com_ptr<ID3D11Device> CreateDevice();
 	CompositionBrush CreateD2DBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
-	
+
 	//member variables
 	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;

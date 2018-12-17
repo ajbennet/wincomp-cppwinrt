@@ -7,7 +7,7 @@ using namespace Windows::UI::Composition;
 
 DirectXTileRenderer::DirectXTileRenderer()
 {
-	
+
 }
 
 
@@ -15,28 +15,56 @@ DirectXTileRenderer::~DirectXTileRenderer()
 {
 }
 
+void DirectXTileRenderer::Initialize() {
+	namespace abi = ABI::Windows::UI::Composition;
+
+	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
+	com_ptr<ID3D11Device> const& device = CreateDevice();
+	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
+
+	//TODO: move this out, so renderer is abstracted completely
+	m_compositor = WinComp::GetInstance()->m_compositor;
+
+	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
+	com_ptr<ID2D1Device> d2device;
+	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
+	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
+
+	InitializeTextLayout();
+}
+
+
+CompositionBrush DirectXTileRenderer::getSurfaceBrush()
+{
+	if (m_CompositionBrush == nullptr) {
+		m_CompositionBrush = CreateD2DBrush();
+	}
+	return m_CompositionBrush;
+
+}
+
 void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 {
 	Color randomColor = ColorHelper::FromArgb(255, random(256), random(256), random(256));
-		// Begin our update of the surface pixels. If this is our first update, we are required
-		// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
-		// any time we make an update we touch the entire surface, so we always pass nullptr).
-		winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
+	// Begin our update of the surface pixels. If this is our first update, we are required
+	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+	// any time we make an update we touch the entire surface, so we always pass nullptr).
+	winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
 
-		POINT offset;
-		m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset);
-		{
-			D2D1_RECT_F source;
-			source.left = static_cast<float>(offset.x);
-			source.top = static_cast<float>(offset.y);
-			source.right = static_cast<float>(source.left + WinComp::TILESIZE);
-			source.bottom = static_cast<float>(source.top + WinComp::TILESIZE);
+	POINT offset;
+	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset);
+	{
+		D2D1_RECT_F source;
+		source.left = static_cast<float>(offset.x);
+		source.top = static_cast<float>(offset.y);
+		source.right = static_cast<float>(source.left + WinComp::TILESIZE);
+		source.bottom = static_cast<float>(source.top + WinComp::TILESIZE);
 
 
-			DrawText(d2dDeviceContext, offset);
-		}
-		m_surfaceInterop->EndDraw();
-	
+		DrawText(d2dDeviceContext, offset);
+	}
+	m_surfaceInterop->EndDraw();
+
 }
 
 void DirectXTileRenderer::Trim(Rect trimRect)
@@ -71,7 +99,7 @@ void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext,
 
 }
 
-void DirectXTileRenderer::InitializeTextLayout() 
+void DirectXTileRenderer::InitializeTextLayout()
 {
 	winrt::com_ptr<::IDWriteFactory> dWriteFactory;
 	winrt::com_ptr<::IDWriteTextFormat> textFormat;
