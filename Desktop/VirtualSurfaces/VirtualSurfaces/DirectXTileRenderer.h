@@ -25,7 +25,7 @@ public:
 
 private:
 	int random(int maxValue);
-	void DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset, Rect rect);
+	void DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, int tileRow, int tileColumn);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);

@@ -54,6 +54,7 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 	POINT offset;
 	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset);
 	{
+		d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
 		//Draw the rectangle
 		winrt::com_ptr<::ID2D1SolidColorBrush> brush;
 		winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
@@ -63,7 +64,7 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 
 
 		//Draw Text
-		DrawText(d2dDeviceContext, offset, rect);
+		DrawText(d2dDeviceContext,tileRow, tileColumn);
 	}
 	m_surfaceInterop->EndDraw();
 
@@ -81,26 +82,26 @@ int DirectXTileRenderer::random(int maxValue) {
 }
 
 // Renders the text into our composition surface
-void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset, Rect rect )
+void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext,int tileRow, int tileColumn )
 {
 	winrt::com_ptr<::IDWriteTextLayout> textLayout;
 
 	//Rect windowBounds = { 100,100,100,100 };
-	std::wstring text{ std::to_wstring(offset.x) + L"," + std::to_wstring(offset.y)  };
+	std::wstring text{ std::to_wstring(tileRow) + L"," + std::to_wstring(tileColumn)  };
 
 	winrt::check_hresult(
 		m_dWriteFactory->CreateTextLayout(
 			text.c_str(),
 			(uint32_t)text.size(),
 			m_textFormat.get(),
-			rect.Width,
-			rect.Height,
+			50,
+			50,
 			textLayout.put()
 		)
 	);
 
 
-	d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
+	
 
 	// Create a solid color brush for the text. A more sophisticated application might want
 	// to cache and reuse a brush across all text elements instead, taking care to recreate
@@ -202,12 +203,6 @@ CompositionBrush DirectXTileRenderer::CreateD2DBrush()
 {
 	namespace abi = ABI::Windows::UI::Composition;
 
-	/* Size size;
-	 size.Width = 100;
-	 size.Height = 100;
-
-
-	 auto surfaceInterop = CreateSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();*/
 	SizeInt32 size;
 	size.Width = WinComp::TILESIZE * 2;
 	size.Height = WinComp::TILESIZE * 2;

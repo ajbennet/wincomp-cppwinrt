@@ -73,7 +73,7 @@ void WinComp::PrepareVisuals()
 	m_target.Root(root);
 	auto visuals = root.Children();
 
-	AddD2DVisual(visuals, 330.0f, 330.0f);
+	AddD2DVisual(visuals, 0, 0);
 	m_TileDrawingManager.DrawTile(0, 0);
 }
 
