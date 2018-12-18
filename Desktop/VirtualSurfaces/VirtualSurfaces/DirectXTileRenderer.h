@@ -25,7 +25,7 @@ public:
 
 private:
 	int random(int maxValue);
-	void DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset);
+	void DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset, Rect rect);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
@@ -34,7 +34,8 @@ private:
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 
 	//member variables
-	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
+	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
+	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;

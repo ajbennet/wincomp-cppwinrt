@@ -54,14 +54,16 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 	POINT offset;
 	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset);
 	{
-		D2D1_RECT_F source;
-		source.left = static_cast<float>(offset.x);
-		source.top = static_cast<float>(offset.y);
-		source.right = static_cast<float>(source.left + WinComp::TILESIZE);
-		source.bottom = static_cast<float>(source.top + WinComp::TILESIZE);
+		//Draw the rectangle
+		winrt::com_ptr<::ID2D1SolidColorBrush> brush;
+		winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+			D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.put()));
+		D2D1_RECT_F source{ rect.X, rect.Y, rect.Width, rect.Height };
+		d2dDeviceContext->FillRectangle(source, brush.get());
 
 
-		DrawText(d2dDeviceContext, offset);
+		//Draw Text
+		DrawText(d2dDeviceContext, offset, rect);
 	}
 	m_surfaceInterop->EndDraw();
 
@@ -79,40 +81,55 @@ int DirectXTileRenderer::random(int maxValue) {
 }
 
 // Renders the text into our composition surface
-void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset)
+void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset, Rect rect )
 {
+	winrt::com_ptr<::IDWriteTextLayout> textLayout;
+
+	//Rect windowBounds = { 100,100,100,100 };
+	std::wstring text{ std::to_wstring(offset.x) + L"," + std::to_wstring(offset.y)  };
+
+	winrt::check_hresult(
+		m_dWriteFactory->CreateTextLayout(
+			text.c_str(),
+			(uint32_t)text.size(),
+			m_textFormat.get(),
+			rect.Width,
+			rect.Height,
+			textLayout.put()
+		)
+	);
+
 
 	d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
 
 	// Create a solid color brush for the text. A more sophisticated application might want
 	// to cache and reuse a brush across all text elements instead, taking care to recreate
 	// it in the event of device removed.
-	winrt::com_ptr<::ID2D1SolidColorBrush> brush;
+	
+	winrt::com_ptr<::ID2D1SolidColorBrush> textBrush;
 	winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF::Black, 1.0f), brush.put()));
-
+			D2D1::ColorF(D2D1::ColorF::Black, 1.0f), textBrush.put()));
 	// Draw the line of text at the specified offset, which corresponds to the top-left
 	// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
 	// context; this has already been done for us by the composition API.
-	d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)offset.x, (float)offset.y), m_textLayout.get(),
-		brush.get());
+	d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)50, (float)50), textLayout.get(),
+		textBrush.get());
 
 }
 
 void DirectXTileRenderer::InitializeTextLayout()
 {
-	winrt::com_ptr<::IDWriteFactory> dWriteFactory;
-	winrt::com_ptr<::IDWriteTextFormat> textFormat;
+	
 	winrt::check_hresult(
 		::DWriteCreateFactory(
 			DWRITE_FACTORY_TYPE_SHARED,
-			__uuidof(dWriteFactory),
-			reinterpret_cast<::IUnknown**>(dWriteFactory.put())
+			__uuidof(m_dWriteFactory),
+			reinterpret_cast<::IUnknown**>(m_dWriteFactory.put())
 		)
 	);
 
 	winrt::check_hresult(
-		dWriteFactory->CreateTextFormat(
+		m_dWriteFactory->CreateTextFormat(
 			L"Segoe UI",
 			nullptr,
 			DWRITE_FONT_WEIGHT_REGULAR,
@@ -120,21 +137,7 @@ void DirectXTileRenderer::InitializeTextLayout()
 			DWRITE_FONT_STRETCH_NORMAL,
 			36.f,
 			L"en-US",
-			textFormat.put()
-		)
-	);
-
-	Rect windowBounds = { 100,100,100,100 };
-	std::wstring text{ L"TIle 1,1" };
-
-	winrt::check_hresult(
-		dWriteFactory->CreateTextLayout(
-			text.c_str(),
-			(uint32_t)text.size(),
-			textFormat.get(),
-			windowBounds.Width,
-			windowBounds.Height,
-			m_textLayout.put()
+			m_textFormat.put()
 		)
 	);
 
