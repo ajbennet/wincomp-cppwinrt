@@ -66,6 +66,7 @@ void WinComp::Initialize(HWND hwnd)
 void WinComp::PrepareVisuals()
 {
 	m_target = CreateDesktopWindowTarget(m_compositor, m_window);
+	
 	auto root = m_compositor.CreateSpriteVisual();
 	root.RelativeSizeAdjustment({ 1.0f, 1.0f });
 	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
@@ -74,7 +75,8 @@ void WinComp::PrepareVisuals()
 	auto visuals = root.Children();
 
 	AddD2DVisual(visuals, 0, 0);
-	m_TileDrawingManager.DrawTile(0, 0);
+	//m_TileDrawingManager.DrawTile(0, 0);
+	//m_TileDrawingManager.DrawTile(0, 1);
 }
 
 void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
@@ -89,26 +91,15 @@ void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
 	visuals.InsertAtTop(visual);
 }
 
-void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
+void WinComp::DrawVisibleRegion(RECT windowRect) 
 {
-	auto compositor = visuals.Compositor();
-	auto visual = compositor.CreateSpriteVisual();
+	Size windowSize;
+	windowSize.Height = windowRect.bottom - windowRect.top;
+	windowSize.Width = windowRect.right - windowRect.left;
 
-	static Color colors[] =
-	{
-		{ 0xDC, 0x5B, 0x9B, 0xD5 },
-		{ 0xDC, 0xFF, 0xC0, 0x00 },
-		{ 0xDC, 0xED, 0x7D, 0x31 },
-		{ 0xDC, 0x70, 0xAD, 0x47 },
-	};
+	m_TileDrawingManager.UpdateViewportSize(windowSize);
 
-	static unsigned last = 0;
-	unsigned const next = ++last % _countof(colors);
-	visual.Brush(compositor.CreateColorBrush(colors[next]));
-	visual.Size({ 100.0f, 100.0f });
-	visual.Offset({ x, y, 0.0f, });
 
-	visuals.InsertAtTop(visual);
 }
 
 

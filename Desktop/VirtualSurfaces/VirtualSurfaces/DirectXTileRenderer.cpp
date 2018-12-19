@@ -43,29 +43,41 @@ CompositionBrush DirectXTileRenderer::getSurfaceBrush()
 
 }
 
-void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
-{
-	Color randomColor = ColorHelper::FromArgb(255, random(256), random(256), random(256));
+void DirectXTileRenderer::StartDrawingSession() {
+	
+	POINT offset;
 	// Begin our update of the surface pixels. If this is our first update, we are required
 	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
 	// any time we make an update we touch the entire surface, so we always pass nullptr).
-	winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
+	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
+	m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
+}
 
-	POINT offset;
-	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset);
+
+
+void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
+{
+	
 	{
-		d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
+		Color randomColor = ColorHelper::FromArgb(255, random(256), random(256), random(256));
 		//Draw the rectangle
 		winrt::com_ptr<::ID2D1SolidColorBrush> brush;
-		winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+		winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
 			D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.put()));
 		D2D1_RECT_F source{ rect.X, rect.Y, rect.Width, rect.Height };
-		d2dDeviceContext->FillRectangle(source, brush.get());
-
+		m_d2dDeviceContext->FillRectangle(source, brush.get());
 
 		//Draw Text
-		DrawText(d2dDeviceContext,tileRow, tileColumn);
+		DrawText(m_d2dDeviceContext,tileRow, tileColumn);
+
+
 	}
+
+}
+
+
+void DirectXTileRenderer::EndDrawingSession() {
+
 	m_surfaceInterop->EndDraw();
 
 }
@@ -94,8 +106,8 @@ void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext,
 			text.c_str(),
 			(uint32_t)text.size(),
 			m_textFormat.get(),
-			50,
-			50,
+			40,
+			20,
 			textLayout.put()
 		)
 	);
@@ -113,7 +125,7 @@ void DirectXTileRenderer::DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext,
 	// Draw the line of text at the specified offset, which corresponds to the top-left
 	// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
 	// context; this has already been done for us by the composition API.
-	d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)50, (float)50), textLayout.get(),
+	d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)10, (float)10), textLayout.get(),
 		textBrush.get());
 
 }
@@ -136,7 +148,7 @@ void DirectXTileRenderer::InitializeTextLayout()
 			DWRITE_FONT_WEIGHT_REGULAR,
 			DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
-			36.f,
+			20.f,
 			L"en-US",
 			m_textFormat.put()
 		)

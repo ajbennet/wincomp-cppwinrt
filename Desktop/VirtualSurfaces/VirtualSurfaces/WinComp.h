@@ -31,13 +31,13 @@ public:
 	void Initialize(HWND hwnd);
 	void PrepareVisuals();
 	DispatcherQueueController EnsureDispatcherQueue();
+	void DrawVisibleRegion(RECT windowRect);
 	Compositor m_compositor = nullptr;
 	const static int TILESIZE = 100;
 
 private:
 
 	DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window);
-	void AddVisual(VisualCollection const& visuals, float x, float y);
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 
 	DesktopWindowTarget m_target{ nullptr };

@@ -119,6 +119,7 @@ Rect TileDrawingManager::GetRectForTileRange(int tileStartColumn, int tileStartR
 
 void TileDrawingManager::DrawVisibleTiles()
 {
+	currentRenderer->StartDrawingSession();
 	//TODO: drawahead applied to left as well
 	for (int row = 0; row < verticalVisibleTileCount + DrawAheadTileCount; row++)
 	{
@@ -127,6 +128,7 @@ void TileDrawingManager::DrawVisibleTiles()
 			DrawTile(row, column);
 		}
 	}
+	currentRenderer->EndDrawingSession();
 	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
 	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;
 }

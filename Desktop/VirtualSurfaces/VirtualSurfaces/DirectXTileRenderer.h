@@ -21,6 +21,8 @@ public:
 	void Initialize();
 	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
+	void StartDrawingSession();
+	void EndDrawingSession();
 	CompositionBrush getSurfaceBrush();
 
 private:
@@ -40,6 +42,7 @@ private:
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
 	com_ptr<ID2D1DeviceContext> m_D2DContext;
+	winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
 	CompositionBrush m_CompositionBrush = nullptr;
 	Compositor m_compositor = nullptr;
 };
