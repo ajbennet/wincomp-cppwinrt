@@ -42,7 +42,6 @@ wstring TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 		}
 	}
 
-
 	for (int row = drawnBottomTileRow + 1; row <= requiredBottomTileRow; row++)
 	{
 		for (int column = drawnLeftTileColumn; column <= drawnRightTileColumn; column++)

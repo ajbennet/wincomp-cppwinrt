@@ -58,7 +58,6 @@ void WinComp::Initialize(HWND hwnd)
 	DirectXTileRenderer* dxRenderer = new DirectXTileRenderer();
 	dxRenderer->Initialize();
 	m_TileDrawingManager.setRenderer(dxRenderer);
-	//check_hresult(d2device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, m_D2DContext.put()));
 
 }
 
@@ -73,19 +72,21 @@ void WinComp::PrepareVisuals()
 
 	m_target.Root(root);
 	auto visuals = root.Children();
+	RECT windowRect;
+	::GetWindowRect(m_window, &windowRect);
 
-	AddD2DVisual(visuals, 0, 0);
+	AddD2DVisual(visuals, 0, 0, windowRect);
 	//m_TileDrawingManager.DrawTile(0, 0);
 	//m_TileDrawingManager.DrawTile(0, 1);
 }
 
-void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
+void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect)
 {
 	auto compositor = visuals.Compositor();
 	auto visual = compositor.CreateSpriteVisual();
 	visual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 
-	visual.Size({ 100.0f, 100.0f });
+	visual.Size({(float)windowRect.right-windowRect.left, (float)windowRect.bottom-windowRect.top});
 	visual.Offset({ x, y, 0.0f, });
 
 	visuals.InsertAtTop(visual);
