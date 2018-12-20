@@ -103,8 +103,8 @@ void TileDrawingManager::UpdateViewportSize(Size newSize)
 
 Rect TileDrawingManager::GetRectForTile(int row, int column)
 {
-	int x = column * TILESIZE;
-	int y = row * TILESIZE;
+	int x = row * TILESIZE;
+	int y = column * TILESIZE;
 	return Rect(x, y, TILESIZE, TILESIZE);
 	//TODO: refactor above to use below
 }
@@ -120,9 +120,9 @@ void TileDrawingManager::DrawVisibleTiles()
 {
 	currentRenderer->StartDrawingSession();
 	//TODO: drawahead applied to left as well
-	for (int row = 0; row < verticalVisibleTileCount + DrawAheadTileCount; row++)
+	for (int row = 0; row < horizontalVisibleTileCount + DrawAheadTileCount; row++)
 	{
-		for (int column = 0; column < horizontalVisibleTileCount + DrawAheadTileCount; column++)
+		for (int column = 0; column < verticalVisibleTileCount+ DrawAheadTileCount; column++)
 		{
 			DrawTile(row, column);
 		}

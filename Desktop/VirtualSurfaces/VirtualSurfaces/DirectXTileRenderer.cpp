@@ -67,9 +67,9 @@ void DirectXTileRenderer::StartDrawingSession() {
 void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 {
 	
-	{
+	
 		D2D1::ColorF randomColor( random(256)/255, random(256)/255, random(256)/255, 1.0f);
-		D2D1_RECT_F source{ rect.X, rect.Y, rect.Width, rect.Height };
+		D2D1_RECT_F tileRectangle{ rect.X, rect.Y, rect.X+rect.Width, rect.Y+rect.Height};
 
 
 		winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
@@ -78,16 +78,18 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 		//D2D1::ColorF(D2D1::ColorF::Red, 1.0f), tilebrush.put()));
 					randomColor, tilebrush.put()));
 
-		m_d2dDeviceContext->FillRectangle(source, tilebrush.get());
+		m_d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
 		char msgbuf[1000];
-		sprintf_s(msgbuf, "Rect %f,%f,%f,%f \n", source.left, source.top, source.right, source.bottom);
+		sprintf_s(msgbuf, "Rect %f,%f,%f,%f \n", tileRectangle.left, tileRectangle.top, tileRectangle.right, tileRectangle.bottom);
 		OutputDebugStringA(msgbuf);
-		
+		memset(msgbuf, 0, 1000);
+		sprintf_s(msgbuf, "Tile coordinates : %d,%d \n", tileRow, tileColumn);
+		OutputDebugStringA(msgbuf);
 		//Draw Text
 		DrawText(tileRow, tileColumn,rect );
 
 
-	}
+	
 
 }
 
@@ -223,8 +225,8 @@ CompositionBrush DirectXTileRenderer::CreateD2DBrush()
 	namespace abi = ABI::Windows::UI::Composition;
 
 	SizeInt32 size;
-	size.Width = WinComp::TILESIZE * 10;
-	size.Height = WinComp::TILESIZE * 10;
+	size.Width = WinComp::TILESIZE * 20;
+	size.Height = WinComp::TILESIZE * 20;
 
 	m_surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
