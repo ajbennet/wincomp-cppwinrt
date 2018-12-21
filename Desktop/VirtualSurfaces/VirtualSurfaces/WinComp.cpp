@@ -100,7 +100,34 @@ void WinComp::DrawVisibleRegion(RECT windowRect)
 
 	m_TileDrawingManager.UpdateViewportSize(windowSize);
 
+}
 
+void WinComp::ConfigureInteraction()
+{
+	m_interactionSource = VisualInteractionSource::Create();
+	m_interactionSource.PositionXSourceMode = InteractionSourceMode::EnabledWithInertia;
+	m_interactionSource.PositionYSourceMode = InteractionSourceMode::EnabledWithInertia;
+
+	m_interactionSource.ScaleSourceMode = InteractionSourceMode::EnabledWithInertia;
+
+	m_tracker = InteractionTracker::CreateWithOwner(m_compositor, this);
+	m_tracker.InteractionSources.Add(m_interactionSource);
+	
+	m_moveSurfaceExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.X");
+	m_moveSurfaceExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
+	
+	m_moveSurfaceUpDownExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.Y");
+	m_moveSurfaceUpDownExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
+	
+	m_scaleSurfaceUpDownExpressionAnimation = m_compositor.CreateExpressionAnimation("tracker.Scale");
+	m_scaleSurfaceUpDownExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
+	
+	m_tracker.MinPosition = float3(0, 0, 0);
+	//TODO: use same consts as tilemanager object
+	m_tracker.MaxPosition = float3(TILESIZE * 10000, TILESIZE * 10000, 0);
+
+	m_tracker.MinScale = 0.01f;
+	m_tracker.MaxScale = 100.0f;
 }
 
 

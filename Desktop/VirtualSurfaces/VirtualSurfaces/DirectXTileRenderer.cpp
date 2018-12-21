@@ -115,8 +115,6 @@ float DirectXTileRenderer::random(int maxValue) {
 void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, Rect rect)
 {
 	
-
-	//Rect windowBounds = { 100,100,100,100 };
 	std::wstring text{ std::to_wstring(tileRow) + L"," + std::to_wstring(tileColumn)  };
 
 	winrt::com_ptr<::IDWriteTextLayout> textLayout;
