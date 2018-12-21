@@ -12,6 +12,7 @@ using namespace Windows::UI;
 using namespace Windows::UI::Composition;
 using namespace Windows::UI::Composition::Desktop;
 
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -25,6 +26,10 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 DispatcherQueueController InitializeDispatcherQueue();
+void AddCompositionVisualsToTarget(HWND hwnd);
+DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window);
+void AddVisual(VisualCollection const& visuals, float x, float y);
+
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -114,7 +119,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
-   InitializeDispatcherQueue();
+   init_apartment(apartment_type::single_threaded);
+   auto controller = InitializeDispatcherQueue();
+
+   AddCompositionVisualsToTarget(hWnd);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -206,4 +214,47 @@ DispatcherQueueController InitializeDispatcherQueue()
 
 	return controller;
 
+}
+
+void AddCompositionVisualsToTarget(HWND window)
+{
+	Compositor compositor;
+	DesktopWindowTarget target= CreateDesktopWindowTarget(compositor, window);
+	auto root = compositor.CreateSpriteVisual();
+	root.RelativeSizeAdjustment({ 1.0f, 1.0f });
+	root.Brush(compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
+	target.Root(root);
+	auto visuals = root.Children();
+	AddVisual(visuals, 100.0f, 100.0f);
+	AddVisual(visuals, 220.0f, 100.0f);
+	AddVisual(visuals, 100.0f, 220.0f);
+	AddVisual(visuals, 220.0f, 220.0f);
+}
+
+void AddVisual(VisualCollection const& visuals, float x, float y)
+{
+	auto compositor = visuals.Compositor();
+	auto visual = compositor.CreateSpriteVisual();
+	static Color colors[] =
+	{
+		{ 0xDC, 0x5B, 0x9B, 0xD5 },
+		{ 0xDC, 0xFF, 0xC0, 0x00 },
+		{ 0xDC, 0xED, 0x7D, 0x31 },
+		{ 0xDC, 0x70, 0xAD, 0x47 },
+	};
+	static unsigned last = 0;
+	unsigned const next = ++last % _countof(colors);
+	visual.Brush(compositor.CreateColorBrush(colors[next]));
+	visual.Size({ 100.0f, 100.0f });
+	visual.Offset({ x, y, 0.0f, });
+	visuals.InsertAtTop(visual);
+}
+
+DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window)
+{
+	namespace abi = ABI::Windows::UI::Composition::Desktop;
+	auto interop = compositor.as<abi::ICompositorDesktopInterop>();
+	DesktopWindowTarget target{ nullptr };
+	check_hresult(interop->CreateDesktopWindowTarget(window, true, reinterpret_cast<abi::IDesktopWindowTarget**>(put_abi(target))));
+	return target;
 }

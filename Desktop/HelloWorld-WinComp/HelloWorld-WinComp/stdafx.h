@@ -20,6 +20,7 @@
 
 // reference additional headers your program requires here
 #include <winrt/Windows.UI.Composition.Desktop.h>
+#include <windows.ui.composition.interop.h>
 #include <winrt/Windows.System.h>
 #include <DispatcherQueue.h>
 
