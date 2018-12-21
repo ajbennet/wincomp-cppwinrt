@@ -19,26 +19,30 @@ public:
 	DirectXTileRenderer();
 	~DirectXTileRenderer();
 	void Initialize();
-	void DrawTile(Rect rect, int tileRow, int tileColumn) ;
+	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
+	void StartDrawingSession();
+	void EndDrawingSession();
 	CompositionBrush getSurfaceBrush();
 
 private:
-	int random(int maxValue);
-	void DrawText(com_ptr<ID2D1DeviceContext> d2dDeviceContext, POINT offset);
+	float random(int maxValue);
+	void DrawText( int tileRow, int tileColumn, Rect rect);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
 	CompositionBrush CreateD2DBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
-	
+
 	//member variables
-	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
+	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
+	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
+	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
-	com_ptr<ID2D1DeviceContext> m_D2DContext;
+	winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
 	CompositionBrush m_CompositionBrush = nullptr;
 	Compositor m_compositor = nullptr;
 };

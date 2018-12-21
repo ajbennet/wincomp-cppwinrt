@@ -35,7 +35,7 @@ DispatcherQueueController WinComp::EnsureDispatcherQueue()
 	check_hresult(CreateDispatcherQueueController(options, reinterpret_cast<abi::IDispatcherQueueController**>(put_abi(controller))));
 
 	return controller;
-	
+
 }
 
 DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& compositor, HWND window)
@@ -58,7 +58,6 @@ void WinComp::Initialize(HWND hwnd)
 	DirectXTileRenderer* dxRenderer = new DirectXTileRenderer();
 	dxRenderer->Initialize();
 	m_TileDrawingManager.setRenderer(dxRenderer);
-	//check_hresult(d2device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, m_D2DContext.put()));
 
 }
 
@@ -66,52 +65,72 @@ void WinComp::Initialize(HWND hwnd)
 void WinComp::PrepareVisuals()
 {
 	m_target = CreateDesktopWindowTarget(m_compositor, m_window);
+	
 	auto root = m_compositor.CreateSpriteVisual();
 	root.RelativeSizeAdjustment({ 1.0f, 1.0f });
 	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
 
 	m_target.Root(root);
 	auto visuals = root.Children();
+	RECT windowRect;
+	::GetWindowRect(m_window, &windowRect);
 
-	AddD2DVisual(visuals, 330.0f, 330.0f);
-	m_TileDrawingManager.DrawTile(0,0);
+	AddD2DVisual(visuals, 0, 0, windowRect);
+	//m_TileDrawingManager.DrawTile(0, 0);
+	//m_TileDrawingManager.DrawTile(0, 1);
 }
 
-void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
+void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect)
 {
 	auto compositor = visuals.Compositor();
 	auto visual = compositor.CreateSpriteVisual();
 	visual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 
-	visual.Size({ 100.0f, 100.0f });
+	visual.Size({(float)windowRect.right-windowRect.left, (float)windowRect.bottom-windowRect.top});
 	visual.Offset({ x, y, 0.0f, });
 
 	visuals.InsertAtTop(visual);
 }
 
-void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
+void WinComp::DrawVisibleRegion(RECT windowRect) 
 {
-	auto compositor = visuals.Compositor();
-	auto visual = compositor.CreateSpriteVisual();
+	Size windowSize;
+	windowSize.Height = windowRect.bottom - windowRect.top;
+	windowSize.Width = windowRect.right - windowRect.left;
 
-	static Color colors[] =
-	{
-		{ 0xDC, 0x5B, 0x9B, 0xD5 },
-		{ 0xDC, 0xFF, 0xC0, 0x00 },
-		{ 0xDC, 0xED, 0x7D, 0x31 },
-		{ 0xDC, 0x70, 0xAD, 0x47 },
-	};
+	m_TileDrawingManager.UpdateViewportSize(windowSize);
 
-	static unsigned last = 0;
-	unsigned const next = ++last % _countof(colors);
-	visual.Brush(compositor.CreateColorBrush(colors[next]));
-	visual.Size({ 100.0f, 100.0f });
-	visual.Offset({ x, y, 0.0f, });
+}
 
-	visuals.InsertAtTop(visual);
+void WinComp::ConfigureInteraction()
+{
+	m_interactionSource = VisualInteractionSource::Create();
+	m_interactionSource.PositionXSourceMode = InteractionSourceMode::EnabledWithInertia;
+	m_interactionSource.PositionYSourceMode = InteractionSourceMode::EnabledWithInertia;
+
+	m_interactionSource.ScaleSourceMode = InteractionSourceMode::EnabledWithInertia;
+
+	m_tracker = InteractionTracker::CreateWithOwner(m_compositor, this);
+	m_tracker.InteractionSources.Add(m_interactionSource);
+	
+	m_moveSurfaceExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.X");
+	m_moveSurfaceExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
+	
+	m_moveSurfaceUpDownExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.Y");
+	m_moveSurfaceUpDownExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
+	
+	m_scaleSurfaceUpDownExpressionAnimation = m_compositor.CreateExpressionAnimation("tracker.Scale");
+	m_scaleSurfaceUpDownExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
+	
+	m_tracker.MinPosition = float3(0, 0, 0);
+	//TODO: use same consts as tilemanager object
+	m_tracker.MaxPosition = float3(TILESIZE * 10000, TILESIZE * 10000, 0);
+
+	m_tracker.MinScale = 0.01f;
+	m_tracker.MaxScale = 100.0f;
 }
 
 
- 
 
- 
+
+
