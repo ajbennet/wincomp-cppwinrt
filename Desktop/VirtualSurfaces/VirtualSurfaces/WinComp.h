@@ -18,8 +18,13 @@ using namespace Windows::Foundation;
 using namespace Windows::Foundation::Numerics;
 
 
-class WinComp: public IInteractionTrackerOwner
+class WinComp
+	//: IInteractionTrackerOwner
 {
+
+	/*WinComp(const WinComp&) = delete;
+	WinComp& operator =(const WinComp&) = delete*/;
+
 #pragma region Singleton Pattern
 public:
 	~WinComp();
@@ -34,9 +39,21 @@ public:
 	void PrepareVisuals();
 	DispatcherQueueController EnsureDispatcherQueue();
 	void DrawVisibleRegion(RECT windowRect);
+	void ConfigureInteraction();
+
+	//interaction tracker owner
+	void CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args);
+	void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args);
+	void InertiaStateEntered(InteractionTracker sender, InteractionTrackerInertiaStateEnteredArgs args);
+	void InteractingStateEntered(InteractionTracker sender, InteractionTrackerInteractingStateEnteredArgs args);
+	void RequestIgnored(InteractionTracker sender, InteractionTrackerRequestIgnoredArgs args);
+	void ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args);
+
 	Compositor m_compositor = nullptr;
 	const static int TILESIZE = 100;
 	VisualInteractionSource m_interactionSource=nullptr;
+	SpriteVisual m_viewportVisual = nullptr;
+	ContainerVisual m_contentVisual = nullptr;
 	InteractionTracker m_tracker = nullptr;
 	ExpressionAnimation m_moveSurfaceExpressionAnimation = nullptr;
 	ExpressionAnimation m_moveSurfaceUpDownExpressionAnimation = nullptr;
@@ -46,7 +63,7 @@ private:
 
 	DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window);
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect);
-	void ConfigureInteraction();
+	void AddVisual(VisualCollection const& visuals, float x, float y);
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
 	TileDrawingManager m_TileDrawingManager;
