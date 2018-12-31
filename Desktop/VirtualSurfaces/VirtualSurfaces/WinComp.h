@@ -11,6 +11,7 @@ using namespace Windows::UI;
 using namespace Windows::UI::Composition;
 using namespace Windows::UI::Composition::Interactions;
 using namespace Windows::UI::Composition::Desktop;
+using namespace Windows::UI::Input;
 using namespace Windows::Graphics;
 using namespace Windows::Graphics::Display;
 using namespace Windows::Graphics::DirectX;
@@ -48,6 +49,8 @@ public:
 	void InteractingStateEntered(InteractionTracker sender, InteractionTrackerInteractingStateEnteredArgs args);
 	void RequestIgnored(InteractionTracker sender, InteractionTrackerRequestIgnoredArgs args);
 	void ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args);
+	void TryRedirectForManipulation(PointerPoint pp);
+	void TryUpdatePositionBy(float3 const& amount);
 
 	Compositor m_compositor = nullptr;
 	const static int TILESIZE = 100;

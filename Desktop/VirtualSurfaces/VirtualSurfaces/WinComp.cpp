@@ -62,6 +62,15 @@ void WinComp::Initialize(HWND hwnd)
 
 }
 
+void WinComp::TryRedirectForManipulation(PointerPoint pp)
+{
+	m_interactionSource.TryRedirectForManipulation(pp);
+}
+
+void WinComp::TryUpdatePositionBy(float3 const& amount)
+{
+	m_tracker.TryUpdatePositionBy(amount);
+}
 
 void WinComp::PrepareVisuals()
 {
@@ -75,7 +84,7 @@ void WinComp::PrepareVisuals()
 	
 	m_viewportVisual = m_compositor.CreateSpriteVisual();
 	m_viewportVisual.RelativeSizeAdjustment({ 1.0f, 1.0f });
-	m_viewportVisual.Brush(m_compositor.CreateColorBrush({ 0xAA, 0xAA, 0xAA, 0xAA }));
+	m_viewportVisual.Brush(m_compositor.CreateColorBrush({ 0x00, 0xAA, 0xAA, 0xAA }));
 
 	m_contentVisual = m_compositor.CreateContainerVisual();
 	m_contentVisual.Size({ 5000, 5000 });
@@ -151,8 +160,6 @@ void WinComp::ConfigureInteraction()
 	m_interactionSource.PositionYSourceMode(InteractionSourceMode::EnabledWithInertia);
 	m_interactionSource.ScaleSourceMode(InteractionSourceMode::EnabledWithInertia);
 	m_interactionSource.ManipulationRedirectionMode(VisualInteractionSourceRedirectionMode::CapableTouchpadAndPointerWheel);
-
-
 
 	m_tracker = InteractionTracker::Create(m_compositor);
 	m_tracker.InteractionSources().Add(m_interactionSource);
