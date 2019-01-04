@@ -47,26 +47,40 @@ CompositionBrush DirectXTileRenderer::getSurfaceBrush()
 }
 
 void DirectXTileRenderer::StartDrawingSession() {
-	
-	POINT offset;
-	// Begin our update of the surface pixels. If this is our first update, we are required
-	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
-	// any time we make an update we touch the entire surface, so we always pass nullptr).
-	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
-	m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
-	// Create a solid color brush for the text. A more sophisticated application might want
-	// to cache and reuse a brush across all text elements instead, taking care to recreate
-	// it in the event of device removed.
-	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF::Black, 1.0f), m_textBrush.put()));
-
+//	
+//	POINT offset;
+//	// Begin our update of the surface pixels. If this is our first update, we are required
+//	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+//	// any time we make an update we touch the entire surface, so we always pass nullptr).
+//	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
+//	m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
+//	// Create a solid color brush for the text. A more sophisticated application might want
+//	// to cache and reuse a brush across all text elements instead, taking care to recreate
+//	// it in the event of device removed.
+//	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
+//		D2D1::ColorF(D2D1::ColorF::Black, 1.0f), m_textBrush.put()));
+//
 }
 
 
 
 void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 {
-	
+		POINT offset;
+		RECT updateRect= RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width),  static_cast<LONG>(rect.Y + rect.Height) };
+		// Begin our update of the surface pixels. If this is our first update, we are required
+		// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+		// any time we make an update we touch the entire surface, so we always pass nullptr).
+		winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
+		winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
+		m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
+		m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
+		// Create a solid color brush for the text. A more sophisticated application might want
+		// to cache and reuse a brush across all text elements instead, taking care to recreate
+		// it in the event of device removed.
+		winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
+			D2D1::ColorF(D2D1::ColorF::Black, 1.0f), m_textBrush.put()));
+
 	
 		D2D1::ColorF randomColor( random(256)/255, random(256)/255, random(256)/255, 1.0f);
 		D2D1_RECT_F tileRectangle{ rect.X, rect.Y, rect.X+rect.Width, rect.Y+rect.Height};
@@ -85,9 +99,15 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 		memset(msgbuf, 0, 1000);
 		sprintf_s(msgbuf, "Tile coordinates : %d,%d \n", tileRow, tileColumn);
 		OutputDebugStringA(msgbuf);
-		//Draw Text
-		DrawText(tileRow, tileColumn,rect );
+		memset(msgbuf, 0, 1000);
+		sprintf_s(msgbuf, "UpdateRect %ld,%ld,%ld,%ld \n", updateRect.left, updateRect.top, updateRect.right, updateRect.bottom);
+		OutputDebugStringA(msgbuf);
+		
 
+		//Draw Text
+		DrawText(tileRow, tileColumn,rect, m_d2dDeviceContext,m_textBrush);
+
+		m_surfaceInterop->EndDraw();
 
 	
 
@@ -112,7 +132,8 @@ float DirectXTileRenderer::random(int maxValue) {
 }
 
 // Renders the text into our composition surface
-void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, Rect rect)
+void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, Rect rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
+	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush)
 {
 	
 	std::wstring text{ std::to_wstring(tileRow) + L"," + std::to_wstring(tileColumn)  };
@@ -223,8 +244,8 @@ CompositionBrush DirectXTileRenderer::CreateD2DBrush()
 	namespace abi = ABI::Windows::UI::Composition;
 
 	SizeInt32 size;
-	size.Width = WinComp::TILESIZE * 20;
-	size.Height = WinComp::TILESIZE * 20;
+	size.Width = WinComp::TILESIZE * 10000;
+	size.Height = WinComp::TILESIZE * 10000;
 
 	m_surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 
