@@ -74,7 +74,7 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 		winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
 		winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
 		m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
-		m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
+		m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
 		// Create a solid color brush for the text. A more sophisticated application might want
 		// to cache and reuse a brush across all text elements instead, taking care to recreate
 		// it in the event of device removed.
@@ -103,13 +103,10 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 		sprintf_s(msgbuf, "UpdateRect %ld,%ld,%ld,%ld \n", updateRect.left, updateRect.top, updateRect.right, updateRect.bottom);
 		OutputDebugStringA(msgbuf);
 		
-
 		//Draw Text
 		DrawText(tileRow, tileColumn,rect, m_d2dDeviceContext,m_textBrush);
 
 		m_surfaceInterop->EndDraw();
-
-	
 
 }
 
