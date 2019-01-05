@@ -131,6 +131,7 @@ void TileDrawingManager::DrawVisibleTiles()
 			DrawTile(row, column);
 		}
 	}
+	
 //	currentRenderer->EndDrawingSession();
 	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
 	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;

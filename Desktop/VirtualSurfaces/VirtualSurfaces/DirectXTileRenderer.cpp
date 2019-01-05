@@ -66,49 +66,75 @@ void DirectXTileRenderer::StartDrawingSession() {
 
 void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 {
-		POINT offset;
-		RECT updateRect= RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width),  static_cast<LONG>(rect.Y + rect.Height) };
-		// Begin our update of the surface pixels. If this is our first update, we are required
-		// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
-		// any time we make an update we touch the entire surface, so we always pass nullptr).
-		winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
-		winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
-		m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
-		m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
-		// Create a solid color brush for the text. A more sophisticated application might want
-		// to cache and reuse a brush across all text elements instead, taking care to recreate
-		// it in the event of device removed.
-		winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
-			D2D1::ColorF(D2D1::ColorF::Black, 1.0f), m_textBrush.put()));
+	POINT offset;
+	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width-10),  static_cast<LONG>(rect.Y + rect.Height-10) };
+	// Begin our update of the surface pixels. If this is our first update, we are required
+	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+	// any time we make an update we touch the entire surface, so we always pass nullptr).
+	winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
+	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
+	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset))) {
 
-	
-		D2D1::ColorF randomColor( random(256)/255, random(256)/255, random(256)/255, 1.0f);
-		D2D1_RECT_F tileRectangle{ rect.X, rect.Y, rect.X+rect.Width, rect.Y+rect.Height};
+	m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+	// Create a solid color brush for the text. A more sophisticated application might want
+	// to cache and reuse a brush across all text elements instead, taking care to recreate
+	// it in the event of device removed.
+	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
+		D2D1::ColorF(D2D1::ColorF::Black, 1.0f), m_textBrush.put()));
 
 
-		winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
-		//Draw the rectangle
-		winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
+	D2D1::ColorF randomColor(random(256) / 255, random(256) / 255, random(256) / 255, 1.0f);
+	//D2D1_RECT_F tileRectangle{ rect.X+offset.x, rect.Y + offset.y, rect.X+offset.x + rect.Width, rect.Y+offset.y + rect.Height };
+	D2D1_RECT_F tileRectangle{ offset.x , offset.y , offset.x + rect.Width, offset.y  + rect.Height };
+
+
+	winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
+	//Draw the rectangle
+	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
 		//D2D1::ColorF(D2D1::ColorF::Red, 1.0f), tilebrush.put()));
-					randomColor, tilebrush.put()));
+		randomColor, tilebrush.put()));
 
-		m_d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "Rect %f,%f,%f,%f \n", tileRectangle.left, tileRectangle.top, tileRectangle.right, tileRectangle.bottom);
-		OutputDebugStringA(msgbuf);
-		memset(msgbuf, 0, 1000);
-		sprintf_s(msgbuf, "Tile coordinates : %d,%d \n", tileRow, tileColumn);
-		OutputDebugStringA(msgbuf);
-		memset(msgbuf, 0, 1000);
-		sprintf_s(msgbuf, "UpdateRect %ld,%ld,%ld,%ld \n", updateRect.left, updateRect.top, updateRect.right, updateRect.bottom);
-		OutputDebugStringA(msgbuf);
-		
-		//Draw Text
-		DrawText(tileRow, tileColumn,rect, m_d2dDeviceContext,m_textBrush);
+	m_d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
+	char msgbuf[1000];
+	sprintf_s(msgbuf, "Rect %f,%f,%f,%f \n", tileRectangle.left, tileRectangle.top, tileRectangle.right, tileRectangle.bottom);
+	OutputDebugStringA(msgbuf);
+	memset(msgbuf, 0, 1000);
+	sprintf_s(msgbuf, "Tile coordinates : %d,%d \n", tileRow, tileColumn);
+	OutputDebugStringA(msgbuf);
+	memset(msgbuf, 0, 1000);
+	sprintf_s(msgbuf, "Offset %ld,%ld\n", offset.x, offset.y);
+	OutputDebugStringA(msgbuf);
 
-		m_surfaceInterop->EndDraw();
+	//Draw Text
+	DrawText(tileRow, tileColumn, tileRectangle,  m_d2dDeviceContext, m_textBrush);
+
+	m_surfaceInterop->EndDraw();
+	}
 
 }
+
+
+	// We may detect device loss on BeginDraw calls. This helper handles this condition or other
+	// errors.
+	bool DirectXTileRenderer::CheckForDeviceRemoved(HRESULT hr)
+	{
+		if (SUCCEEDED(hr))
+		{
+			// Everything is fine -- go ahead and draw
+			return true;
+		}
+		else if (hr == DXGI_ERROR_DEVICE_REMOVED)
+		{
+			// We can't draw at this time, but this failure is recoverable. Just skip drawing for
+			// now. We will be asked to draw again once the Direct3D device is recreated
+			return false;
+		}
+		else
+		{
+			// Any other error is unexpected and, therefore, fatal
+			//TODO:: FailFast();
+		}
+	}
 
 
 void DirectXTileRenderer::EndDrawingSession() {
@@ -129,7 +155,7 @@ float DirectXTileRenderer::random(int maxValue) {
 }
 
 // Renders the text into our composition surface
-void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, Rect rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
+void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
 	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush)
 {
 	
@@ -150,7 +176,7 @@ void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, Rect rect, winrt
 	// Draw the line of text at the specified offset, which corresponds to the top-left
 	// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
 	// context; this has already been done for us by the composition API.
-	m_d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)rect.X+10, (float)rect.Y+10), textLayout.get(),
+	m_d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)rect.left+10, (float)rect.top+10), textLayout.get(),
 		m_textBrush.get());
 
 }

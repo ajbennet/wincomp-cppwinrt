@@ -76,28 +76,30 @@ void WinComp::PrepareVisuals()
 {
 	m_target = CreateDesktopWindowTarget(m_compositor, m_window);
 	
+	RECT windowRect;
+	::GetWindowRect(m_window, &windowRect);
+
 	auto root = m_compositor.CreateSpriteVisual();
 	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
 
-	root.RelativeSizeAdjustment({ 1000, 1000 });
+	root.Size({ 0.0f+windowRect.right-windowRect.left, 0.0f + windowRect.bottom-windowRect.top});
 	m_target.Root(root);
 	
 	m_viewportVisual = m_compositor.CreateSpriteVisual();
 	m_viewportVisual.RelativeSizeAdjustment({ 1.0f, 1.0f });
-	m_viewportVisual.Brush(m_compositor.CreateColorBrush({ 0x00, 0xAA, 0xAA, 0xAA }));
+	m_viewportVisual.Brush(m_compositor.CreateColorBrush({ 0xAA, 0xAA, 0xAA, 0xAA }));
 
 	m_contentVisual = m_compositor.CreateContainerVisual();
-	m_contentVisual.Size({ 5000, 5000 });
+	m_contentVisual.RelativeSizeAdjustment({ 1.0f, 1.0f });
+
 
 	auto visuals = root.Children();
 	visuals.InsertAtTop(m_contentVisual);
 	visuals.InsertAtTop(m_viewportVisual);
 
 	visuals = m_contentVisual.Children();
-	RECT windowRect;
-	::GetWindowRect(m_window, &windowRect);
-
-	AddD2DVisual(visuals, 100.f, 100.0f, windowRect);
+	m_contentVisual.Size();
+	AddD2DVisual(visuals, 0.0f, 0.0f, windowRect);
 //	AddVisual(visuals, 100, 100);
 	//m_TileDrawingManager.DrawTile(0, 0);
 	//m_TileDrawingManager.DrawTile(0, 1);

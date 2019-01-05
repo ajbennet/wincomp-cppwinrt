@@ -27,7 +27,7 @@ public:
 
 private:
 	float random(int maxValue);
-	void DrawText( int tileRow, int tileColumn, Rect rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
+	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
 		winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
@@ -35,6 +35,8 @@ private:
 	com_ptr<ID3D11Device> CreateDevice();
 	CompositionBrush CreateD2DBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
+	bool CheckForDeviceRemoved(HRESULT hr);
+
 
 	//member variables
 	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
