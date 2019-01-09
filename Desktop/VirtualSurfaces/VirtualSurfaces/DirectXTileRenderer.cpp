@@ -39,10 +39,10 @@ void DirectXTileRenderer::Initialize() {
 
 CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 {
-	if (m_CompositionBrush == nullptr) {
-		m_CompositionBrush = CreateD2DBrush();
+	if (m_surfaceBrush == nullptr) {
+		m_surfaceBrush = CreateD2DBrush();
 	}
-	return m_CompositionBrush;
+	return m_surfaceBrush;
 
 }
 
@@ -121,7 +121,10 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 
 void DirectXTileRenderer::Trim(Rect trimRect)
 {
-	//drawingSurface.Trim(new RectInt32[]{ new RectInt32 { X = (int)trimRect.X, Y = (int)trimRect.Y, Width = (int)trimRect.Width, Height = (int)trimRect.Height } });
+	RectInt32 trimRects[1];
+	trimRects[0] = RectInt32{ (int)trimRect.X, (int)trimRect.Y, (int)trimRect.Width, (int)trimRect.Height };
+	
+	m_virtualSurfaceBrush.Trim(trimRects);
 }
 
 float DirectXTileRenderer::random(int maxValue) {
@@ -230,12 +233,12 @@ CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeI
 {
 	auto graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
 
-	auto surface = graphicsDevice2.CreateVirtualDrawingSurface(
+	m_virtualSurfaceBrush = graphicsDevice2.CreateVirtualDrawingSurface(
 		size,
 		DirectXPixelFormat::B8G8R8A8UIntNormalized,
 		DirectXAlphaMode::Premultiplied);
 
-	return surface;
+	return m_virtualSurfaceBrush;
 }
 
 CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()

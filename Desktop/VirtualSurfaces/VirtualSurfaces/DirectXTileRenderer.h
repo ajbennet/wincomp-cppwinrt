@@ -42,7 +42,8 @@ private:
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
-	CompositionSurfaceBrush m_CompositionBrush = nullptr;
+	CompositionVirtualDrawingSurface m_virtualSurfaceBrush = nullptr;
+	CompositionSurfaceBrush m_surfaceBrush = nullptr;
 	Compositor m_compositor = nullptr;
 };
 

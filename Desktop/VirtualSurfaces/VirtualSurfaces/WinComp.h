@@ -19,12 +19,10 @@ using namespace Windows::Foundation;
 using namespace Windows::Foundation::Numerics;
 
 
-class WinComp
-	//: IInteractionTrackerOwner
+//class WinComp : consume_Windows_UI_Composition_Interactions_IInteractionTrackerOwner<WinComp>
+//class WinComp : IInteractionTrackerOwner<WinComp>
+class WinComp : public implements<WinComp, IInteractionTrackerOwner, no_weak_ref>
 {
-
-	/*WinComp(const WinComp&) = delete;
-	WinComp& operator =(const WinComp&) = delete*/;
 
 #pragma region Singleton Pattern
 public:
@@ -39,19 +37,22 @@ public:
 	void Initialize(HWND hwnd);
 	void PrepareVisuals();
 	DispatcherQueueController EnsureDispatcherQueue();
-	void DrawVisibleRegion(RECT windowRect);
+	void UpdateViewPort(RECT windowRect);
 	void ConfigureInteraction();
 
+	
+	void TryRedirectForManipulation(PointerPoint pp);
+	void TryUpdatePositionBy(float3 const& amount);
+
 	//interaction tracker owner
-	void CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args);
-	void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args);
+
 	void InertiaStateEntered(InteractionTracker sender, InteractionTrackerInertiaStateEnteredArgs args);
 	void InteractingStateEntered(InteractionTracker sender, InteractionTrackerInteractingStateEnteredArgs args);
 	void RequestIgnored(InteractionTracker sender, InteractionTrackerRequestIgnoredArgs args);
 	void ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args);
-	void TryRedirectForManipulation(PointerPoint pp);
-	void TryUpdatePositionBy(float3 const& amount);
-
+	void CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args);
+	void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args);
+	
 	Compositor m_compositor = nullptr;
 	const static int TILESIZE = 100;
 	VisualInteractionSource m_interactionSource=nullptr;
@@ -72,6 +73,8 @@ private:
 	TileDrawingManager m_TileDrawingManager;
 	CompositionPropertySet m_animatingPropset = nullptr;
 	ExpressionAnimation m_animateMatrix = nullptr;
+	float lastTrackerScale = 1.0f;
+	bool zooming;
 
 	ExpressionAnimation m_moveSurfaceExpressionAnimation = nullptr;
 	ExpressionAnimation m_moveSurfaceUpDownExpressionAnimation = nullptr;

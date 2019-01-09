@@ -129,14 +129,14 @@ void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RE
 	visuals.InsertAtTop(m_contentVisual);
 }
 
-void WinComp::DrawVisibleRegion(RECT windowRect) 
+void WinComp::UpdateViewPort(RECT windowRect)
 {
 	Size windowSize;
 	windowSize.Height = windowRect.bottom - windowRect.top;
 	windowSize.Width = windowRect.right - windowRect.left;
 
 	m_TileDrawingManager.UpdateViewportSize(windowSize);
-
+	m_contentVisual.Size(windowSize);
 }
 
 void WinComp::StartAnimation(CompositionSurfaceBrush brush)
@@ -165,7 +165,8 @@ void WinComp::ConfigureInteraction()
 	m_interactionSource.ScaleSourceMode(InteractionSourceMode::EnabledWithInertia);
 	m_interactionSource.ManipulationRedirectionMode(VisualInteractionSourceRedirectionMode::CapableTouchpadAndPointerWheel);
 
-	m_tracker = InteractionTracker::Create(m_compositor);
+	//IInteractionTrackerOwner itOwner = (auto &&) { make<WinComp>() };
+	m_tracker = InteractionTracker::CreateWithOwner(m_compositor, *this);
 	m_tracker.InteractionSources().Add(m_interactionSource);
 	
 	m_moveSurfaceExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.X");
@@ -187,7 +188,7 @@ void WinComp::ConfigureInteraction()
 	StartAnimation(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 }
 
-// interactionTrackerown
+// interactionTrackerowner
 
 void WinComp::CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args)
 {
@@ -195,13 +196,12 @@ void WinComp::CustomAnimationStateEntered(InteractionTracker sender, Interaction
 
 void WinComp::IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args)
 {
-	/*if (zooming)
+	if (zooming)
 	{
-		MessageDialog md = new MessageDialog($"Zoom complete.  Final value:{lastTrackerScale}");
-		await md.ShowAsync();
+		//ToDO: logic
 	}
 
-	zooming = false;*/
+	zooming = false;
 }
 
 void WinComp::InertiaStateEntered(InteractionTracker sender, InteractionTrackerInertiaStateEnteredArgs args)
@@ -219,30 +219,31 @@ void WinComp::RequestIgnored(InteractionTracker sender, InteractionTrackerReques
 
 void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args)
 {
-	//try
-	//{
-	//	string diags = string.Empty;
+	try
+	{
+		wstring diags ;
 
-	//	if (lastTrackerScale == args.Scale)
-	//	{
-	//		diags = visibleRegionManager.UpdateVisibleRegion(sender.Position);
-	//	}
-	//	else
-	//	{
-	//		// Don't run tilemanager during a zoom
-	//		// TODO need custom logic here eg for zoom out
-	//		zooming = true;
-	//	}
+		if (lastTrackerScale == args.Scale())
+		{
+			diags = m_TileDrawingManager.UpdateVisibleRegion(sender.Position());
+		}
+		else
+		{
+			// Don't run tilemanager during a zoom
+			// TODO need custom logic here eg for zoom out
+			zooming = true;
+		}
 
-	//	lastTrackerScale = args.Scale;
+		lastTrackerScale = args.Scale();
 
-	//	hud.Display = $"X:{sender.Position.X:00000.00} Y:{sender.Position.Y:00000.00} Scale:{sender.Scale:00000.00} " + diags;
-	//}
-	//catch (Exception ex)
-	//{
+	}
+	catch (...)
+	{
 	//	Debug.WriteLine(ex.Message);
-	//}
+	}
 }
+
+
 
 
 
