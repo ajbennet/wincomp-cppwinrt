@@ -56,20 +56,25 @@ public:
 	const static int TILESIZE = 100;
 	VisualInteractionSource m_interactionSource=nullptr;
 	SpriteVisual m_viewportVisual = nullptr;
-	ContainerVisual m_contentVisual = nullptr;
+	SpriteVisual m_contentVisual = nullptr;
 	InteractionTracker m_tracker = nullptr;
-	ExpressionAnimation m_moveSurfaceExpressionAnimation = nullptr;
-	ExpressionAnimation m_moveSurfaceUpDownExpressionAnimation = nullptr;
-	ExpressionAnimation m_scaleSurfaceUpDownExpressionAnimation = nullptr;
+	
 
 private:
 
 	DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window);
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect);
 	void AddVisual(VisualCollection const& visuals, float x, float y);
+	void StartAnimation(CompositionSurfaceBrush brush);
+
 	DesktopWindowTarget m_target{ nullptr };
 	HWND m_window = nullptr;
 	TileDrawingManager m_TileDrawingManager;
+	CompositionPropertySet m_animatingPropset = nullptr;
+	ExpressionAnimation m_animateMatrix = nullptr;
 
+	ExpressionAnimation m_moveSurfaceExpressionAnimation = nullptr;
+	ExpressionAnimation m_moveSurfaceUpDownExpressionAnimation = nullptr;
+	ExpressionAnimation m_scaleSurfaceUpDownExpressionAnimation = nullptr;
 };
 

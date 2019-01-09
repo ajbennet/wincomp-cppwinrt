@@ -21,9 +21,7 @@ public:
 	void Initialize();
 	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
-	void StartDrawingSession();
-	void EndDrawingSession();
-	CompositionBrush getSurfaceBrush();
+	CompositionSurfaceBrush getSurfaceBrush();
 
 private:
 	float random(int maxValue);
@@ -33,7 +31,7 @@ private:
 	com_ptr<ID2D1Factory1> CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
-	CompositionBrush CreateD2DBrush();
+	CompositionSurfaceBrush CreateD2DBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	bool CheckForDeviceRemoved(HRESULT hr);
 
@@ -44,7 +42,7 @@ private:
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
-	CompositionBrush m_CompositionBrush = nullptr;
+	CompositionSurfaceBrush m_CompositionBrush = nullptr;
 	Compositor m_compositor = nullptr;
 };
 

@@ -85,24 +85,8 @@ void WinComp::PrepareVisuals()
 	root.Size({ 0.0f+windowRect.right-windowRect.left, 0.0f + windowRect.bottom-windowRect.top});
 	m_target.Root(root);
 	
-	m_viewportVisual = m_compositor.CreateSpriteVisual();
-	m_viewportVisual.RelativeSizeAdjustment({ 1.0f, 1.0f });
-	m_viewportVisual.Brush(m_compositor.CreateColorBrush({ 0xAA, 0xAA, 0xAA, 0xAA }));
-
-	m_contentVisual = m_compositor.CreateContainerVisual();
-	m_contentVisual.RelativeSizeAdjustment({ 1.0f, 1.0f });
-
-
 	auto visuals = root.Children();
-	visuals.InsertAtTop(m_contentVisual);
-	visuals.InsertAtTop(m_viewportVisual);
-
-	visuals = m_contentVisual.Children();
-	m_contentVisual.Size();
 	AddD2DVisual(visuals, 0.0f, 0.0f, windowRect);
-//	AddVisual(visuals, 100, 100);
-	//m_TileDrawingManager.DrawTile(0, 0);
-	//m_TileDrawingManager.DrawTile(0, 1);
 }
 
 void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
@@ -136,13 +120,13 @@ void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
 void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect)
 {
 	auto compositor = visuals.Compositor();
-	auto visual = compositor.CreateSpriteVisual();
-	visual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
+	m_contentVisual = compositor.CreateSpriteVisual();
+	m_contentVisual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 
-	visual.Size({(float)windowRect.right-windowRect.left, (float)windowRect.bottom-windowRect.top});
-	visual.Offset({ x, y, 0.0f, });
+	m_contentVisual.Size({(float)windowRect.right-windowRect.left, (float)windowRect.bottom-windowRect.top});
+	m_contentVisual.Offset({ x, y, 0.0f, });
 
-	visuals.InsertAtTop(visual);
+	visuals.InsertAtTop(m_contentVisual);
 }
 
 void WinComp::DrawVisibleRegion(RECT windowRect) 
@@ -155,9 +139,27 @@ void WinComp::DrawVisibleRegion(RECT windowRect)
 
 }
 
+void WinComp::StartAnimation(CompositionSurfaceBrush brush)
+{
+	m_animatingPropset = m_compositor.CreatePropertySet();
+	m_animatingPropset.InsertScalar(L"xcoord", 1.0f);
+	m_animatingPropset.StartAnimation(L"xcoord", m_moveSurfaceExpressionAnimation);
+
+	m_animatingPropset.InsertScalar(L"ycoord", 1.0f);
+	m_animatingPropset.StartAnimation(L"ycoord", m_moveSurfaceUpDownExpressionAnimation);
+
+	m_animatingPropset.InsertScalar(L"scale", 1.0f);
+	m_animatingPropset.StartAnimation(L"scale", m_scaleSurfaceUpDownExpressionAnimation);
+
+	m_animateMatrix = m_compositor.CreateExpressionAnimation(L"Matrix3x2(props.scale, 0.0, 0.0, props.scale, props.xcoord, props.ycoord)");
+	m_animateMatrix.SetReferenceParameter(L"props", m_animatingPropset);
+
+	brush.StartAnimation(L"TransformMatrix", m_animateMatrix);
+}
+
 void WinComp::ConfigureInteraction()
 {
-	m_interactionSource = VisualInteractionSource::Create(m_viewportVisual);
+	m_interactionSource = VisualInteractionSource::Create(m_contentVisual);
 	m_interactionSource.PositionXSourceMode(InteractionSourceMode::EnabledWithInertia);
 	m_interactionSource.PositionYSourceMode(InteractionSourceMode::EnabledWithInertia);
 	m_interactionSource.ScaleSourceMode(InteractionSourceMode::EnabledWithInertia);
@@ -166,7 +168,7 @@ void WinComp::ConfigureInteraction()
 	m_tracker = InteractionTracker::Create(m_compositor);
 	m_tracker.InteractionSources().Add(m_interactionSource);
 	
-	m_moveSurfaceExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position");
+	m_moveSurfaceExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.X");
 	m_moveSurfaceExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
 	
 	m_moveSurfaceUpDownExpressionAnimation = m_compositor.CreateExpressionAnimation(L"-tracker.Position.Y");
@@ -177,13 +179,12 @@ void WinComp::ConfigureInteraction()
 	
 	m_tracker.MinPosition(float3(0, 0, 0));
 	//TODO: use same consts as tilemanager object
-	m_tracker.MaxPosition(float3(TILESIZE * 10, TILESIZE * 10, 0));
+	m_tracker.MaxPosition(float3(TILESIZE * 10000, TILESIZE * 10000, 0));
 
 	m_tracker.MinScale(0.01f);
-	m_tracker.MaxScale(1.0f);
-	m_contentVisual.StartAnimation(L"Offset", m_moveSurfaceExpressionAnimation);
-	//m_contentVisual.StartAnimation(L"Offset.Y", m_moveSurfaceUpDownExpressionAnimation);
-//	root.StartAnimation(L"Scale", m_scaleSurfaceUpDownExpressionAnimation);
+	m_tracker.MaxScale(100.0f);
+	
+	StartAnimation(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 }
 
 // interactionTrackerown

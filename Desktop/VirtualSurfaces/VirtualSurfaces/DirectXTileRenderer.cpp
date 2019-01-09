@@ -37,7 +37,7 @@ void DirectXTileRenderer::Initialize() {
 }
 
 
-CompositionBrush DirectXTileRenderer::getSurfaceBrush()
+CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 {
 	if (m_CompositionBrush == nullptr) {
 		m_CompositionBrush = CreateD2DBrush();
@@ -45,23 +45,6 @@ CompositionBrush DirectXTileRenderer::getSurfaceBrush()
 	return m_CompositionBrush;
 
 }
-
-void DirectXTileRenderer::StartDrawingSession() {
-//	
-//	POINT offset;
-//	// Begin our update of the surface pixels. If this is our first update, we are required
-//	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
-//	// any time we make an update we touch the entire surface, so we always pass nullptr).
-//	m_surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset);
-//	m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Blue, 0.f));
-//	// Create a solid color brush for the text. A more sophisticated application might want
-//	// to cache and reuse a brush across all text elements instead, taking care to recreate
-//	// it in the event of device removed.
-//	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
-//		D2D1::ColorF(D2D1::ColorF::Black, 1.0f), m_textBrush.put()));
-//
-}
-
 
 
 void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
@@ -135,13 +118,6 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 			//TODO:: FailFast();
 		}
 	}
-
-
-void DirectXTileRenderer::EndDrawingSession() {
-
-	m_surfaceInterop->EndDraw();
-
-}
 
 void DirectXTileRenderer::Trim(Rect trimRect)
 {
@@ -262,7 +238,7 @@ CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeI
 	return surface;
 }
 
-CompositionBrush DirectXTileRenderer::CreateD2DBrush()
+CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
 {
 	namespace abi = ABI::Windows::UI::Composition;
 
@@ -283,7 +259,5 @@ CompositionBrush DirectXTileRenderer::CreateD2DBrush()
 	//surfaceBrush.TransformMatrix = System::Numerics::Matrix3x2.CreateTranslation(20.0f, 20.0f);
 	surfaceBrush.TransformMatrix(make_float3x2_translation(20.0f, 20.0f));
 
-	//surfaceBrush.Surface = surface;
-	CompositionBrush retVal = (CompositionBrush)surfaceBrush;
-	return retVal;
+	return surfaceBrush;
 }
