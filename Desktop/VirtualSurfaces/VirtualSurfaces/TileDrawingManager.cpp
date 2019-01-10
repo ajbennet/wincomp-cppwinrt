@@ -120,13 +120,10 @@ void TileDrawingManager::DrawVisibleTiles()
 {
 	//currentRenderer->StartDrawingSession();
 	//TODO: drawahead applied to left as well
-	for (int column = 0; column < 
-		verticalVisibleTileCount+ DrawAheadTileCount
-		; column++)
+	
+	for (int row = 0; row < horizontalVisibleTileCount + DrawAheadTileCount; row++)
 	{
-		for (int row = 0; row <
-			horizontalVisibleTileCount + DrawAheadTileCount
-			; row++)
+		for (int column = 0; column <horizontalVisibleTileCount + DrawAheadTileCount; column++)
 		{
 			DrawTile(row, column);
 		}

@@ -19,8 +19,6 @@ using namespace Windows::Foundation;
 using namespace Windows::Foundation::Numerics;
 
 
-//class WinComp : consume_Windows_UI_Composition_Interactions_IInteractionTrackerOwner<WinComp>
-//class WinComp : IInteractionTrackerOwner<WinComp>
 class WinComp : public implements<WinComp, IInteractionTrackerOwner, no_weak_ref>
 {
 
