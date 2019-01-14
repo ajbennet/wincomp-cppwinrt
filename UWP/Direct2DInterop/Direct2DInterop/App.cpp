@@ -14,10 +14,8 @@
 //*********************************************************
 
 #include "pch.h"
+#include "CustomTextRenderer.h"
 
-#include <D2d1_1.h>
-#include <D3d11_4.h>
-#include <Dwrite.h>
 #include <Windows.Graphics.DirectX.Direct3D11.interop.h>
 #include <Windows.ui.composition.interop.h>
 #include <winrt/Windows.Foundation.h>
@@ -45,14 +43,22 @@ namespace abi
 // An app-provided helper to render lines of text.
 struct SampleText
 {
-	SampleText(winrt::com_ptr<::IDWriteTextLayout> const& text, CompositionGraphicsDevice const& compositionGraphicsDevice) :
-		m_text(text),
-		m_compositionGraphicsDevice(compositionGraphicsDevice)
+
+
+	SampleText(winrt::com_ptr<::IDWriteTextLayout> const& text, CompositionGraphicsDevice const& compositionGraphicsDevice, winrt::com_ptr<ID2D1Factory> const& d2dFactory
+	//	, CustomTextRenderer* const& textRenderer
+	) :
+		m_textLayout(text)
+		,m_compositionGraphicsDevice(compositionGraphicsDevice)
+		, m_d2dFactory(d2dFactory)
+		//,m_textRenderer(textRenderer)
 	{
 		// Create the surface just big enough to hold the formatted text block.
 		DWRITE_TEXT_METRICS metrics;
-		winrt::check_hresult(m_text->GetMetrics(&metrics));
+		winrt::check_hresult(m_textLayout->GetMetrics(&metrics));
 		winrt::Windows::Foundation::Size surfaceSize{ metrics.width, metrics.height };
+
+		
 
 		CompositionDrawingSurface drawingSurface{ m_compositionGraphicsDevice.CreateDrawingSurface(
 			surfaceSize,
@@ -63,8 +69,9 @@ struct SampleText
 		m_drawingSurfaceInterop = drawingSurface.as<abi::ICompositionDrawingSurfaceInterop>();
 
 		// Draw the text
-		DrawText();
-
+		//DrawText();
+		//DrawTextWithEdgeDetectionEffect();
+		DrawOutlineText();
 		// If the rendering device is lost, the application will recreate and replace it. We then
 		// own redrawing our pixels.
 		m_deviceReplacedEventToken = m_compositionGraphicsDevice.RenderingDeviceReplaced(
@@ -74,6 +81,7 @@ struct SampleText
 				DrawText();
 				return S_OK;
 			});
+		
 	}
 
 	~SampleText()
@@ -91,7 +99,9 @@ struct SampleText
 
 private:
 	// The text to draw.
-	winrt::com_ptr<::IDWriteTextLayout> m_text;
+	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
+	winrt::com_ptr<::ID2D1Factory> m_d2dFactory;
+
 
 	// The composition surface that we use in the visual tree.
 	winrt::com_ptr<abi::ICompositionDrawingSurfaceInterop> m_drawingSurfaceInterop;
@@ -128,6 +138,39 @@ private:
 	// Renders the text into our composition surface
 	void DrawText()
 	{
+
+		winrt::com_ptr<::ID2D1DeviceContext> m_d2dContext;
+		// Begin our update of the surface pixels. If this is our first update, we are required
+		// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+		// any time we make an update we touch the entire surface, so we always pass nullptr).
+		POINT offset;
+		if (CheckForDeviceRemoved(m_drawingSurfaceInterop->BeginDraw(nullptr,
+			__uuidof(ID2D1DeviceContext), m_d2dContext.put_void(), &offset)))
+		{
+			m_d2dContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+
+			// Create a solid color brush for the text. A more sophisticated application might want
+			// to cache and reuse a brush across all text elements instead, taking care to recreate
+			// it in the event of device removed.
+			winrt::com_ptr<::ID2D1SolidColorBrush> brush;
+			winrt::check_hresult(m_d2dContext->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.put()));
+
+			// Draw the line of text at the specified offset, which corresponds to the top-left
+			// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
+			// context; this has already been done for us by the composition API.
+			m_d2dContext->DrawTextLayout(D2D1::Point2F((float)offset.x, (float)offset.y), m_textLayout.get(),
+				brush.get());
+
+			// Our update is done. EndDraw never indicates rendering device removed, so any
+			// failure here is unexpected and, therefore, fatal.
+			winrt::check_hresult(m_drawingSurfaceInterop->EndDraw());
+		}
+	}
+
+	// Renders the text into our composition surface
+	void DrawOutlineText()
+	{
 		// Begin our update of the surface pixels. If this is our first update, we are required
 		// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
 		// any time we make an update we touch the entire surface, so we always pass nullptr).
@@ -138,24 +181,95 @@ private:
 		{
 			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
 
-			// Create a solid color brush for the text. A more sophisticated application might want
-			// to cache and reuse a brush across all text elements instead, taking care to recreate
-			// it in the event of device removed.
-			winrt::com_ptr<::ID2D1SolidColorBrush> brush;
-			winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
-				D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.put()));
+			winrt::com_ptr<ID2D1SolidColorBrush> blackBrush;
 
-			// Draw the line of text at the specified offset, which corresponds to the top-left
-			// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
-			// context; this has already been done for us by the composition API.
-			d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)offset.x, (float)offset.y), m_text.get(),
-				brush.get());
+			d2dDeviceContext->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::Black),
+				blackBrush.put()
+			);
+
+			//setting the fillBrush to white, so we get the just the outline text.
+			winrt::com_ptr<ID2D1SolidColorBrush> whiteBrush;
+
+			d2dDeviceContext->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::White),
+				whiteBrush.put()
+			);
+
+
+			CustomTextRenderer* textRenderer = new CustomTextRenderer(
+				m_d2dFactory,
+				d2dDeviceContext,
+				blackBrush,
+				whiteBrush
+			);
+
+			d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+			m_textLayout->Draw(
+				d2dDeviceContext.get(),
+				textRenderer,
+				offset.x,
+				offset.y
+			);
 
 			// Our update is done. EndDraw never indicates rendering device removed, so any
 			// failure here is unexpected and, therefore, fatal.
 			winrt::check_hresult(m_drawingSurfaceInterop->EndDraw());
 		}
 	}
+
+	// Renders the text into our composition surface
+	void DrawTextWithEdgeDetectionEffect()
+	{
+		// Begin our update of the surface pixels. If this is our first update, we are required
+		// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+		// any time we make an update we touch the entire surface, so we always pass nullptr).
+		winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
+		POINT offset;
+		if (CheckForDeviceRemoved(m_drawingSurfaceInterop->BeginDraw(nullptr,
+			__uuidof(ID2D1DeviceContext), d2dDeviceContext.put_void(), &offset)))
+		{
+			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+			winrt::com_ptr<::ID2D1SolidColorBrush> brush;
+			winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.put()));
+
+			winrt::com_ptr<ID2D1Image> originalTarget;
+			d2dDeviceContext->GetTarget(originalTarget.put());
+
+			//create command list
+			winrt::com_ptr<ID2D1CommandList> commandList1;
+			winrt::check_hresult(d2dDeviceContext->CreateCommandList(commandList1.put()));
+			//Set the command list as the target
+			d2dDeviceContext->SetTarget(commandList1.get());
+
+			// Draw the line of text at the specified offset, which corresponds to the top-left
+			// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
+			// context; this has already been done for us by the composition API.
+			d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)offset.x, (float)offset.y), m_textLayout.get(),
+				brush.get());
+			winrt::check_hresult(commandList1->Close());
+			d2dDeviceContext->SetTarget(originalTarget.get());
+
+			winrt::com_ptr<ID2D1Effect> edgeDetectionEffect;
+			winrt::check_hresult(d2dDeviceContext->CreateEffect(CLSID_D2D1EdgeDetection, edgeDetectionEffect.put()));
+
+			edgeDetectionEffect->SetInput(0, commandList1.get());
+			edgeDetectionEffect->SetValue(D2D1_EDGEDETECTION_PROP_STRENGTH, 0.5f);
+			edgeDetectionEffect->SetValue(D2D1_EDGEDETECTION_PROP_BLUR_RADIUS, 0.0f);
+			edgeDetectionEffect->SetValue(D2D1_EDGEDETECTION_PROP_MODE, D2D1_EDGEDETECTION_MODE_SOBEL);
+			edgeDetectionEffect->SetValue(D2D1_EDGEDETECTION_PROP_OVERLAY_EDGES, false);
+			edgeDetectionEffect->SetValue(D2D1_EDGEDETECTION_PROP_ALPHA_MODE, D2D1_ALPHA_MODE_PREMULTIPLIED);
+
+			d2dDeviceContext->DrawImage(edgeDetectionEffect.get());
+
+			// Our update is done. EndDraw never indicates rendering device removed, so any
+			// failure here is unexpected and, therefore, fatal.
+			winrt::check_hresult(m_drawingSurfaceInterop->EndDraw());
+		}
+	}
+
 };
 
 struct DeviceLostEventArgs
@@ -308,7 +422,12 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		m_target = m_compositor.CreateTargetForCurrentView();
 		ContainerVisual root = m_compositor.CreateContainerVisual();
 		m_target.Root(root);
-		
+
+		SpriteVisual viewport = m_compositor.CreateSpriteVisual();
+		viewport.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
+		viewport.Size({ 400,400 });
+		//viewport.Size({ 0.0f + windowRect.right - windowRect.left, 0.0f + windowRect.bottom - windowRect.top });
+
 
 		Initialize();
 
@@ -322,24 +441,24 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 
 		winrt::check_hresult(
 			m_dWriteFactory->CreateTextFormat(
-				L"Segoe UI",
+				L"Bell MT",
 				nullptr,
 				DWRITE_FONT_WEIGHT_REGULAR,
 				DWRITE_FONT_STYLE_NORMAL,
 				DWRITE_FONT_STRETCH_NORMAL,
-				20.f,
+				48.0f,
 				L"en-US",
 				m_textFormat.put()
 			)
 		);
 
 		Rect windowBounds{ window.Bounds() };
-		std::wstring text{ L"Hello, World!" };
+
 
 		winrt::check_hresult(
 			m_dWriteFactory->CreateTextLayout(
-				text.c_str(),
-				(uint32_t)text.size(),
+				m_text.c_str(),
+				(uint32_t)m_text.size(),
 				m_textFormat.get(),
 				windowBounds.Width,
 				windowBounds.Height,
@@ -348,9 +467,11 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		);
 
 		Visual textVisual{ CreateVisualFromTextLayout(m_textLayout) };
-		textVisual.Size({ 100, 100 });
-		textVisual.Offset({ 100 , 100, 0});
-		root.Children().InsertAtTop(textVisual);
+		textVisual.Size({ 200, 200 });
+		textVisual.Offset({ 100 , 100, 0 });
+		viewport.Children().InsertAtTop(textVisual);
+		root.Children().InsertAtTop(viewport);
+
 		AnimateVisual(textVisual);
 	}
 
@@ -359,7 +480,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		auto animation = m_compositor.CreateVector3KeyFrameAnimation();
 		animation.InsertKeyFrame(1.0f, { 200.0f, 100.0f, 0.0f });
 		animation.Duration(std::chrono::seconds(2));
-		animation.Direction( AnimationDirection::Alternate);
+		animation.Direction(AnimationDirection::Alternate);
 		// Run animation for 10 times
 		animation.IterationCount(10);
 		visual.StartAnimation(L"Offset", animation);
@@ -381,7 +502,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 	{
 		// Create our wrapper object that will handle downloading and decoding the image (assume
 		// throwing new here).
-		SampleText textSurface{ text, m_compositionGraphicsDevice };
+		SampleText textSurface{ text, m_compositionGraphicsDevice, m_d2dFactory };
 
 		// The caller is only interested in the underlying surface.
 		return textSurface.Surface();
@@ -393,6 +514,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		// Create a sprite visual
 		SpriteVisual spriteVisual{ m_compositor.CreateSpriteVisual() };
 
+
 		// The sprite visual needs a brush to hold the image.
 		CompositionSurfaceBrush surfaceBrush{
 			m_compositor.CreateSurfaceBrush(CreateSurfaceFromTextLayout(text))
@@ -401,6 +523,14 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		// Associate the brush with the visual.
 		CompositionBrush brush{ surfaceBrush.as<CompositionBrush>() };
 		spriteVisual.Brush(brush);
+
+		DropShadow textShadow{ m_compositor.CreateDropShadow() };
+
+		textShadow.BlurRadius(4);
+		textShadow.Mask(surfaceBrush);
+		textShadow.Color(Colors::Black());
+		textShadow.Offset({ 1.0f, 1.0f, 0.0f });
+		spriteVisual.Shadow(textShadow);
 
 		// Return the visual to the caller as an IVisual.
 		return spriteVisual;
@@ -418,6 +548,10 @@ private:
 	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
 	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
 	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
+	std::wstring m_text{ L"Hello, World!" };
+	winrt::com_ptr<::ID2D1DeviceContext> m_d2dContext;
+	winrt::com_ptr<::ID2D1Factory1> m_d2dFactory;
+	
 
 
 	// This helper creates a Direct2D device, and registers for a device loss
@@ -438,6 +572,7 @@ private:
 			D3D_FEATURE_LEVEL_9_2,
 			D3D_FEATURE_LEVEL_9_1
 		};
+		
 
 		// Create the Direct3D 11 API device object and a corresponding context.
 		winrt::com_ptr<::ID3D11Device> d3DDevice;
@@ -463,13 +598,12 @@ private:
 		D2D1_FACTORY_OPTIONS d2d1FactoryOptions{ D2D1_DEBUG_LEVEL_NONE };
 
 		// Initialize the Direct2D Factory.
-		winrt::com_ptr<::ID2D1Factory1> d2D1Factory;
 		winrt::check_hresult(
 			::D2D1CreateFactory(
 				D2D1_FACTORY_TYPE_SINGLE_THREADED,
-				__uuidof(d2D1Factory),
+				__uuidof(m_d2dFactory),
 				&d2d1FactoryOptions,
-				d2D1Factory.put_void()
+				m_d2dFactory.put_void()
 			)
 		);
 
@@ -479,7 +613,7 @@ private:
 
 		m_d2dDevice = nullptr;
 		winrt::check_hresult(
-			d2D1Factory->CreateDevice(m_dxgiDevice.get(), m_d2dDevice.put())
+			m_d2dFactory->CreateDevice(m_dxgiDevice.get(), m_d2dDevice.put())
 		);
 
 		m_deviceLostHelper.WatchDevice(m_dxgiDevice);
