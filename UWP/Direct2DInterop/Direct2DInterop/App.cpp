@@ -45,7 +45,7 @@ struct SampleText
 {
 
 
-	SampleText(winrt::com_ptr<::IDWriteTextLayout> const& text, CompositionGraphicsDevice const& compositionGraphicsDevice, winrt::com_ptr<ID2D1Factory> const& d2dFactory
+	SampleText(winrt::com_ptr<::IDWriteTextLayout> const& text, CompositionGraphicsDevice const& compositionGraphicsDevice, winrt::com_ptr<ID2D1Factory> const& d2dFactory, boolean outlineText
 	//	, CustomTextRenderer* const& textRenderer
 	) :
 		m_textLayout(text)
@@ -57,9 +57,7 @@ struct SampleText
 		DWRITE_TEXT_METRICS metrics;
 		winrt::check_hresult(m_textLayout->GetMetrics(&metrics));
 		winrt::Windows::Foundation::Size surfaceSize{ metrics.width, metrics.height };
-
-		
-
+	
 		CompositionDrawingSurface drawingSurface{ m_compositionGraphicsDevice.CreateDrawingSurface(
 			surfaceSize,
 			DirectXPixelFormat::B8G8R8A8UIntNormalized,
@@ -71,7 +69,11 @@ struct SampleText
 		// Draw the text
 		//DrawText();
 		//DrawTextWithEdgeDetectionEffect();
-		DrawOutlineText();
+		if(outlineText)
+			DrawOutlineText();
+		else {
+			DrawText();
+		}
 		// If the rendering device is lost, the application will recreate and replace it. We then
 		// own redrawing our pixels.
 		m_deviceReplacedEventToken = m_compositionGraphicsDevice.RenderingDeviceReplaced(
@@ -422,13 +424,13 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		m_target = m_compositor.CreateTargetForCurrentView();
 		ContainerVisual root = m_compositor.CreateContainerVisual();
 		m_target.Root(root);
+		Rect windowBounds{ window.Bounds() };
 
 		SpriteVisual viewport = m_compositor.CreateSpriteVisual();
 		viewport.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
-		viewport.Size({ 400,400 });
+		viewport.Size({ windowBounds.Width,windowBounds.Height});
 		//viewport.Size({ 0.0f + windowRect.right - windowRect.left, 0.0f + windowRect.bottom - windowRect.top });
-
-
+		
 		Initialize();
 
 		winrt::check_hresult(
@@ -452,9 +454,6 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 			)
 		);
 
-		Rect windowBounds{ window.Bounds() };
-
-
 		winrt::check_hresult(
 			m_dWriteFactory->CreateTextLayout(
 				m_text.c_str(),
@@ -466,13 +465,21 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 			)
 		);
 
-		Visual textVisual{ CreateVisualFromTextLayout(m_textLayout) };
-		textVisual.Size({ 200, 200 });
-		textVisual.Offset({ 100 , 100, 0 });
-		viewport.Children().InsertAtTop(textVisual);
+		Visual shadowTextVisual{ CreateVisualFromTextLayout(m_textLayout, false) };
+		shadowTextVisual.Size({ 200, 200 });
+		shadowTextVisual.Offset({ 100 , 100, 0 });
+		viewport.Children().InsertAtTop(shadowTextVisual);
+
+
+		Visual outlineTextVisual{ CreateVisualFromTextLayout(m_textLayout, true) };
+		outlineTextVisual.Size({ 200, 200 });
+		outlineTextVisual.Offset({ 200 , 100, 0 });
+		viewport.Children().InsertAtTop(outlineTextVisual);
+
+
 		root.Children().InsertAtTop(viewport);
 
-		AnimateVisual(textVisual);
+		AnimateVisual(shadowTextVisual);
 	}
 
 	void AnimateVisual(Visual visual)
@@ -498,18 +505,18 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 	}
 
 	// Create a surface that is asynchronously filled with an image
-	ICompositionSurface CreateSurfaceFromTextLayout(winrt::com_ptr<::IDWriteTextLayout> const& text)
+	ICompositionSurface CreateSurfaceFromTextLayout(winrt::com_ptr<::IDWriteTextLayout> const& text, boolean outlineText)
 	{
 		// Create our wrapper object that will handle downloading and decoding the image (assume
 		// throwing new here).
-		SampleText textSurface{ text, m_compositionGraphicsDevice, m_d2dFactory };
+		SampleText textSurface{ text, m_compositionGraphicsDevice, m_d2dFactory, outlineText };
 
 		// The caller is only interested in the underlying surface.
 		return textSurface.Surface();
 	}
 
 	// Create a visual that holds an image.
-	Visual CreateVisualFromTextLayout(winrt::com_ptr<::IDWriteTextLayout> const& text)
+	Visual CreateVisualFromTextLayout(winrt::com_ptr<::IDWriteTextLayout> const& text, boolean outlineText)
 	{
 		// Create a sprite visual
 		SpriteVisual spriteVisual{ m_compositor.CreateSpriteVisual() };
@@ -517,7 +524,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 
 		// The sprite visual needs a brush to hold the image.
 		CompositionSurfaceBrush surfaceBrush{
-			m_compositor.CreateSurfaceBrush(CreateSurfaceFromTextLayout(text))
+			m_compositor.CreateSurfaceBrush(CreateSurfaceFromTextLayout(text,outlineText))
 		};
 
 		// Associate the brush with the visual.
