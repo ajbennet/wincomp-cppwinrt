@@ -67,8 +67,6 @@ struct SampleText
 		m_drawingSurfaceInterop = drawingSurface.as<abi::ICompositionDrawingSurfaceInterop>();
 
 		// Draw the text
-		//DrawText();
-		//DrawTextWithEdgeDetectionEffect();
 		if(outlineText)
 			DrawOutlineText();
 		else {
@@ -156,7 +154,7 @@ private:
 			// it in the event of device removed.
 			winrt::com_ptr<::ID2D1SolidColorBrush> brush;
 			winrt::check_hresult(m_d2dContext->CreateSolidColorBrush(
-				D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.put()));
+				D2D1::ColorF(D2D1::ColorF::DarkCyan, 1.0f), brush.put()));
 
 			// Draw the line of text at the specified offset, which corresponds to the top-left
 			// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
@@ -501,7 +499,6 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		outlineTextVisual.Offset({ 100 , 300, 0 });
 		viewport.Children().InsertAtTop(outlineTextVisual);
 
-
 		root.Children().InsertAtTop(viewport);
 
 		AnimateVisual(shadowTextVisual);
@@ -558,10 +555,11 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 
 		DropShadow textShadow{ m_compositor.CreateDropShadow() };
 
-		textShadow.BlurRadius(4);
+		textShadow.BlurRadius(6);
 		textShadow.Mask(surfaceBrush);
 		textShadow.Color(Colors::Black());
-		textShadow.Offset({ 1.0f, 1.0f, 0.0f });
+		
+		textShadow.Offset({ 5.0f, 5.0f, -5.0f });
 		spriteVisual.Shadow(textShadow);
 
 		// Return the visual to the caller as an IVisual.
