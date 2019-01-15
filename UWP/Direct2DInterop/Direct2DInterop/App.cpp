@@ -411,9 +411,11 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 
 	void Run()
 	{
+
 		CoreWindow window = CoreWindow::GetForCurrentThread();
 		window.Activate();
 
+		//TODO: change this to dispatcherQueue
 		CoreDispatcher dispatcher = window.Dispatcher();
 		dispatcher.ProcessEvents(CoreProcessEventsOption::ProcessUntilQuit);
 	}
@@ -428,8 +430,8 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 
 		SpriteVisual viewport = m_compositor.CreateSpriteVisual();
 		viewport.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
-		viewport.Size({ windowBounds.Width,windowBounds.Height});
-		//viewport.Size({ 0.0f + windowRect.right - windowRect.left, 0.0f + windowRect.bottom - windowRect.top });
+		//viewport.Size({ windowBounds.Width,windowBounds.Height });
+		viewport.Size({ 2000,2000});
 		
 		Initialize();
 
@@ -448,7 +450,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 				DWRITE_FONT_WEIGHT_REGULAR,
 				DWRITE_FONT_STYLE_NORMAL,
 				DWRITE_FONT_STRETCH_NORMAL,
-				48.0f,
+				100.0f,
 				L"en-US",
 				m_textFormat.put()
 			)
@@ -465,15 +467,38 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 			)
 		);
 
-		Visual shadowTextVisual{ CreateVisualFromTextLayout(m_textLayout, false) };
-		shadowTextVisual.Size({ 200, 200 });
+		Visual shadowTextVisual{ CreateVisualFromTextLayouWithShadow(m_textLayout)};
+		shadowTextVisual.Size({ 400, 200 });
 		shadowTextVisual.Offset({ 100 , 100, 0 });
 		viewport.Children().InsertAtTop(shadowTextVisual);
 
+		winrt::check_hresult(
+			m_dWriteFactory->CreateTextFormat(
+				L"Bell MT",
+				nullptr,
+				DWRITE_FONT_WEIGHT_REGULAR,
+				DWRITE_FONT_STYLE_NORMAL,
+				DWRITE_FONT_STRETCH_NORMAL,
+				100.0f,
+				L"en-US",
+				m_outlineTextFormat.put()
+			)
+		);
 
-		Visual outlineTextVisual{ CreateVisualFromTextLayout(m_textLayout, true) };
-		outlineTextVisual.Size({ 200, 200 });
-		outlineTextVisual.Offset({ 200 , 100, 0 });
+		winrt::check_hresult(
+			m_dWriteFactory->CreateTextLayout(
+				m_text.c_str(),
+				(uint32_t)m_text.size(),
+				m_textFormat.get(),
+				windowBounds.Width,
+				windowBounds.Height,
+				m_outlineTextLayout.put()
+			)
+		);
+
+		Visual outlineTextVisual{ CreateVisualFromTextLayoutWithOutlineText(m_outlineTextLayout) };
+		outlineTextVisual.Size({ 400, 400 });
+		outlineTextVisual.Offset({ 100 , 300, 0 });
 		viewport.Children().InsertAtTop(outlineTextVisual);
 
 
@@ -516,7 +541,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 	}
 
 	// Create a visual that holds an image.
-	Visual CreateVisualFromTextLayout(winrt::com_ptr<::IDWriteTextLayout> const& text, boolean outlineText)
+	Visual CreateVisualFromTextLayouWithShadow(winrt::com_ptr<::IDWriteTextLayout> const& text)
 	{
 		// Create a sprite visual
 		SpriteVisual spriteVisual{ m_compositor.CreateSpriteVisual() };
@@ -524,7 +549,7 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 
 		// The sprite visual needs a brush to hold the image.
 		CompositionSurfaceBrush surfaceBrush{
-			m_compositor.CreateSurfaceBrush(CreateSurfaceFromTextLayout(text,outlineText))
+			m_compositor.CreateSurfaceBrush(CreateSurfaceFromTextLayout(text,false))
 		};
 
 		// Associate the brush with the visual.
@@ -543,6 +568,26 @@ struct SampleApp : implements<SampleApp, IFrameworkViewSource, IFrameworkView>
 		return spriteVisual;
 	}
 
+	// Create a visual that holds an image.
+	Visual CreateVisualFromTextLayoutWithOutlineText(winrt::com_ptr<::IDWriteTextLayout> const& text)
+	{
+		// Create a sprite visual
+		SpriteVisual spriteVisual{ m_compositor.CreateSpriteVisual() };
+
+		// The sprite visual needs a brush to hold the image.
+		CompositionSurfaceBrush surfaceBrush{
+			m_compositor.CreateSurfaceBrush(CreateSurfaceFromTextLayout(text,true))
+		};
+
+		// Associate the brush with the visual.
+		CompositionBrush brush{ surfaceBrush.as<CompositionBrush>() };
+		spriteVisual.Brush(brush);
+
+		// Return the visual to the caller as an IVisual.
+		return spriteVisual;
+
+	}
+
 private:
 	CompositionTarget m_target{ nullptr };
 	Compositor m_compositor{ nullptr };
@@ -555,6 +600,9 @@ private:
 	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
 	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
 	winrt::com_ptr<::IDWriteTextLayout> m_textLayout;
+
+	winrt::com_ptr<::IDWriteTextFormat> m_outlineTextFormat;
+	winrt::com_ptr<::IDWriteTextLayout> m_outlineTextLayout;
 	std::wstring m_text{ L"Hello, World!" };
 	winrt::com_ptr<::ID2D1DeviceContext> m_d2dContext;
 	winrt::com_ptr<::ID2D1Factory1> m_d2dFactory;
