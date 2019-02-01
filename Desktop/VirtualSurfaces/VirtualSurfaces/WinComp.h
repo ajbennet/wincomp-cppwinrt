@@ -35,7 +35,7 @@ public:
 	void Initialize(HWND hwnd);
 	void PrepareVisuals();
 	DispatcherQueueController EnsureDispatcherQueue();
-	void UpdateViewPort(RECT windowRect);
+	void UpdateViewPort(RECT windowRect, boolean changeContentVisual);
 	void ConfigureInteraction();
 
 	

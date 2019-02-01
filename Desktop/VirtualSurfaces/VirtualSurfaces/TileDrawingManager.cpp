@@ -103,8 +103,8 @@ void TileDrawingManager::UpdateViewportSize(Size newSize)
 
 Rect TileDrawingManager::GetRectForTile(int row, int column)
 {
-	int x = row * TILESIZE;
-	int y = column * TILESIZE;
+	int x = column * TILESIZE;
+	int y = row * TILESIZE;
 	return Rect(x, y, TILESIZE, TILESIZE);
 	//TODO: refactor above to use below
 }

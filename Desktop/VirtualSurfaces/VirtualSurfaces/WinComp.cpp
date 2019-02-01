@@ -129,14 +129,16 @@ void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RE
 	visuals.InsertAtTop(m_contentVisual);
 }
 
-void WinComp::UpdateViewPort(RECT windowRect)
+void WinComp::UpdateViewPort(RECT windowRect, boolean changeContentVisual)
 {
 	Size windowSize;
-	windowSize.Height = windowRect.bottom - windowRect.top;
-	windowSize.Width = windowRect.right - windowRect.left;
+	windowSize.Height = (windowRect.bottom - windowRect.top)/lastTrackerScale;
+	windowSize.Width = (windowRect.right - windowRect.left)/lastTrackerScale;
 
 	m_TileDrawingManager.UpdateViewportSize(windowSize);
-	m_contentVisual.Size(windowSize);
+	if(changeContentVisual){
+		m_contentVisual.Size(windowSize);
+	}
 }
 
 void WinComp::StartAnimation(CompositionSurfaceBrush brush)
@@ -182,8 +184,8 @@ void WinComp::ConfigureInteraction()
 	//TODO: use same consts as tilemanager object
 	m_tracker.MaxPosition(float3(TILESIZE * 10000, TILESIZE * 10000, 0));
 
-	m_tracker.MinScale(0.01f);
-	m_tracker.MaxScale(100.0f);
+	m_tracker.MinScale(0.1f);
+	m_tracker.MaxScale(10.0f);
 	
 	StartAnimation(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 }
@@ -198,7 +200,12 @@ void WinComp::IdleStateEntered(InteractionTracker sender, InteractionTrackerIdle
 {
 	if (zooming)
 	{
-		//ToDO: logic
+		RECT windowRect;
+		::GetWindowRect(m_window, &windowRect);
+
+		//dont update the content visual, because the window size hasnt changed.
+		UpdateViewPort(windowRect, false);
+
 	}
 
 	zooming = false;
