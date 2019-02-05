@@ -45,5 +45,6 @@ private:
 	CompositionVirtualDrawingSurface m_virtualSurfaceBrush = nullptr;
 	CompositionSurfaceBrush m_surfaceBrush = nullptr;
 	Compositor m_compositor = nullptr;
+	float m_colorCounter = 0.0;
 };
 

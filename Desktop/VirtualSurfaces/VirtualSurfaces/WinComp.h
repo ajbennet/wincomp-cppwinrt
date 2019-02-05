@@ -52,7 +52,7 @@ public:
 	void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args);
 	
 	Compositor m_compositor = nullptr;
-	const static int TILESIZE = 100;
+	const static int TILESIZE = 250;
 	VisualInteractionSource m_interactionSource=nullptr;
 	SpriteVisual m_viewportVisual = nullptr;
 	SpriteVisual m_contentVisual = nullptr;

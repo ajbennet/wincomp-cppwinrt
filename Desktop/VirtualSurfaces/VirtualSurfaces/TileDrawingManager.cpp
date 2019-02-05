@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "TileDrawingManager.h"
+#include <iostream>
+
+#include <ctime>
 
 
 TileDrawingManager::TileDrawingManager()
@@ -120,6 +123,7 @@ void TileDrawingManager::DrawVisibleTiles()
 {
 	//currentRenderer->StartDrawingSession();
 	//TODO: drawahead applied to left as well
+	const clock_t begin_time = std::clock();
 	
 	for (int row = 0; row < horizontalVisibleTileCount + DrawAheadTileCount; row++)
 	{
@@ -132,6 +136,12 @@ void TileDrawingManager::DrawVisibleTiles()
 //	currentRenderer->EndDrawingSession();
 	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
 	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;
+	// do something
+
+	char msgbuf[1000];
+	sprintf_s(msgbuf, "Time Taken %f \n", float(std::clock() - begin_time) / CLOCKS_PER_SEC);
+	OutputDebugStringA(msgbuf);
+
 }
 
 void TileDrawingManager::DrawTile(int row, int column)

@@ -17,9 +17,10 @@ public:
 	void setRenderer(DirectXTileRenderer* renderer);
 	DirectXTileRenderer* getRenderer();
 	void DrawTile(int row, int column);
+	const static int TILESIZE = 250;
 
 private:
-	const int TILESIZE = 250;
+	
 	const int DRAWAHEAD = 0; //Number of tiles to draw ahead //Note: drawahead doesn't currently work
 	int currentTopLeftTileRow = 0;
 	int currentTopLeftTileColumn = 0;

@@ -80,7 +80,8 @@ void WinComp::PrepareVisuals()
 	::GetWindowRect(m_window, &windowRect);
 
 	auto root = m_compositor.CreateSpriteVisual();
-	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xEF, 0xE4 , 0xB0 }));
+	//Create a background with Gray color brush.
+	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xFE, 0xFE , 0xFE }));
 
 	root.Size({ 0.0f+windowRect.right-windowRect.left, 0.0f + windowRect.bottom-windowRect.top});
 	m_target.Root(root);
@@ -182,7 +183,7 @@ void WinComp::ConfigureInteraction()
 	
 	m_tracker.MinPosition(float3(0, 0, 0));
 	//TODO: use same consts as tilemanager object
-	m_tracker.MaxPosition(float3(TILESIZE * 10000, TILESIZE * 10000, 0));
+	m_tracker.MaxPosition(float3(TileDrawingManager::TILESIZE * 10000, TileDrawingManager::TILESIZE * 10000, 0));
 
 	m_tracker.MinScale(0.1f);
 	m_tracker.MaxScale(10.0f);
@@ -232,7 +233,7 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 
 		if (lastTrackerScale == args.Scale())
 		{
-			diags = m_TileDrawingManager.UpdateVisibleRegion(sender.Position());
+			diags = m_TileDrawingManager.UpdateVisibleRegion(sender.Position()/lastTrackerScale);
 		}
 		else
 		{
