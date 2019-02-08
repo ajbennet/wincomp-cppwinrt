@@ -1,0 +1,13 @@
+﻿  Performing Custom Build Step
+cl : Command line warning D9025: overriding '/sdl-' with '/GS-'
+  forwards.cpp
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(70): warning C4391: 'void memchr()': incorrect return type for intrinsic function, expected 'void'
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(70): error C2169: 'memchr': intrinsic function, cannot be defined
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(71): warning C4391: 'void memcmp()': incorrect return type for intrinsic function, expected 'int'
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(71): error C2169: 'memcmp': intrinsic function, cannot be defined
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(72): warning C4391: 'void memcpy()': incorrect return type for intrinsic function, expected 'void'
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(72): error C2169: 'memcpy': intrinsic function, cannot be defined
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(73): warning C4391: 'void memmove()': incorrect return type for intrinsic function, expected 'void'
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(73): error C2169: 'memmove': intrinsic function, cannot be defined
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(74): warning C4391: 'void memset()': incorrect return type for intrinsic function, expected 'void'
+c:\users\tajimha\source\repos\regfree winrt sample\vcruntime140_app\vcruntime140_app\forwards.cpp(74): error C2169: 'memset': intrinsic function, cannot be defined

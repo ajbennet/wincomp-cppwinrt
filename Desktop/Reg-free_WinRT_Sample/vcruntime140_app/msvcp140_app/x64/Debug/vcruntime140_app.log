@@ -1,0 +1,223 @@
+﻿  Performing Custom Build Step
+module.def : warning LNK4197: export '_CreateFrameInfo' specified multiple times; using first specification
+module.def : warning LNK4197: export '_CxxThrowException' specified multiple times; using first specification
+module.def : warning LNK4197: export '_FindAndUnlinkFrame' specified multiple times; using first specification
+module.def : warning LNK4197: export '_IsExceptionObjectToBeDestroyed' specified multiple times; using first specification
+module.def : warning LNK4197: export '_SetWinRTOutOfMemoryExceptionCallback' specified multiple times; using first specification
+module.def : warning LNK4197: export '__AdjustPointer' specified multiple times; using first specification
+module.def : warning LNK4197: export '__BuildCatchObject' specified multiple times; using first specification
+module.def : warning LNK4197: export '__BuildCatchObjectHelper' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxDetectRethrow' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxExceptionFilter' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxFrameHandler' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxFrameHandler2' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxFrameHandler3' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxQueryExceptionSize' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxRegisterExceptionObject' specified multiple times; using first specification
+module.def : warning LNK4197: export '__CxxUnregisterExceptionObject' specified multiple times; using first specification
+module.def : warning LNK4197: export '__DestructExceptionObject' specified multiple times; using first specification
+module.def : warning LNK4197: export '__FrameUnwindFilter' specified multiple times; using first specification
+module.def : warning LNK4197: export '__GetPlatformExceptionInfo' specified multiple times; using first specification
+module.def : warning LNK4197: export '__RTCastToVoid' specified multiple times; using first specification
+module.def : warning LNK4197: export '__RTDynamicCast' specified multiple times; using first specification
+module.def : warning LNK4197: export '__RTtypeid' specified multiple times; using first specification
+module.def : warning LNK4197: export '__TypeMatch' specified multiple times; using first specification
+module.def : warning LNK4197: export '__current_exception' specified multiple times; using first specification
+module.def : warning LNK4197: export '__current_exception_context' specified multiple times; using first specification
+module.def : warning LNK4197: export '__intrinsic_setjmp' specified multiple times; using first specification
+module.def : warning LNK4197: export '__processing_throw' specified multiple times; using first specification
+module.def : warning LNK4197: export '__report_gsfailure' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_exception_copy' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_exception_destroy' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_terminate' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_type_info_compare' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_type_info_destroy_list' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_type_info_hash' specified multiple times; using first specification
+module.def : warning LNK4197: export '__std_type_info_name' specified multiple times; using first specification
+module.def : warning LNK4197: export '__telemetry_main_invoke_trigger' specified multiple times; using first specification
+module.def : warning LNK4197: export '__telemetry_main_return_trigger' specified multiple times; using first specification
+module.def : warning LNK4197: export '__unDName' specified multiple times; using first specification
+module.def : warning LNK4197: export '__unDNameEx' specified multiple times; using first specification
+module.def : warning LNK4197: export '__uncaught_exception' specified multiple times; using first specification
+module.def : warning LNK4197: export '__uncaught_exceptions' specified multiple times; using first specification
+module.def : warning LNK4197: export '__vcrt_GetModuleFileNameW' specified multiple times; using first specification
+module.def : warning LNK4197: export '__vcrt_GetModuleHandleW' specified multiple times; using first specification
+module.def : warning LNK4197: export '__vcrt_InitializeCriticalSectionEx' specified multiple times; using first specification
+module.def : warning LNK4197: export '__vcrt_LoadLibraryExW' specified multiple times; using first specification
+module.def : warning LNK4197: export '_get_purecall_handler' specified multiple times; using first specification
+module.def : warning LNK4197: export '_get_unexpected' specified multiple times; using first specification
+module.def : warning LNK4197: export '_is_exception_typeof' specified multiple times; using first specification
+module.def : warning LNK4197: export '_purecall' specified multiple times; using first specification
+module.def : warning LNK4197: export '_set_purecall_handler' specified multiple times; using first specification
+module.def : warning LNK4197: export '_set_se_translator' specified multiple times; using first specification
+module.def : warning LNK4197: export 'longjmp' specified multiple times; using first specification
+module.def : warning LNK4197: export 'memchr' specified multiple times; using first specification
+module.def : warning LNK4197: export 'memcmp' specified multiple times; using first specification
+module.def : warning LNK4197: export 'memcpy' specified multiple times; using first specification
+module.def : warning LNK4197: export 'memmove' specified multiple times; using first specification
+module.def : warning LNK4197: export 'memset' specified multiple times; using first specification
+module.def : warning LNK4197: export 'set_unexpected' specified multiple times; using first specification
+module.def : warning LNK4197: export 'strchr' specified multiple times; using first specification
+module.def : warning LNK4197: export 'strrchr' specified multiple times; using first specification
+module.def : warning LNK4197: export 'strstr' specified multiple times; using first specification
+module.def : warning LNK4197: export 'unexpected' specified multiple times; using first specification
+module.def : warning LNK4197: export 'wcschr' specified multiple times; using first specification
+module.def : warning LNK4197: export 'wcsrchr' specified multiple times; using first specification
+module.def : warning LNK4197: export 'wcsstr' specified multiple times; using first specification
+module.def : error LNK2001: unresolved external symbol C2VectParallel
+module.def : error LNK2001: unresolved external symbol _Aligned_get_default_resource
+module.def : error LNK2001: unresolved external symbol _Aligned_new_delete_resource
+module.def : error LNK2001: unresolved external symbol _Aligned_set_default_resource
+module.def : error LNK2001: unresolved external symbol _Unaligned_get_default_resource
+module.def : error LNK2001: unresolved external symbol _Unaligned_new_delete_resource
+module.def : error LNK2001: unresolved external symbol _Unaligned_set_default_resource
+module.def : error LNK2001: unresolved external symbol __C_specific_handler
+module.def : error LNK2001: unresolved external symbol __C_specific_handler_noexcept
+module.def : error LNK2001: unresolved external symbol __NLG_Dispatch2
+module.def : error LNK2001: unresolved external symbol __NLG_Return2
+module.def : error LNK2001: unresolved external symbol __intrinsic_setjmpex
+module.def : error LNK2001: unresolved external symbol __std_smf_assoc_laguerre
+module.def : error LNK2001: unresolved external symbol __std_smf_assoc_laguerref
+module.def : error LNK2001: unresolved external symbol __std_smf_assoc_legendre
+module.def : error LNK2001: unresolved external symbol __std_smf_assoc_legendref
+module.def : error LNK2001: unresolved external symbol __std_smf_beta
+module.def : error LNK2001: unresolved external symbol __std_smf_betaf
+module.def : error LNK2001: unresolved external symbol __std_smf_comp_ellint_1
+module.def : error LNK2001: unresolved external symbol __std_smf_comp_ellint_1f
+module.def : error LNK2001: unresolved external symbol __std_smf_comp_ellint_2
+module.def : error LNK2001: unresolved external symbol __std_smf_comp_ellint_2f
+module.def : error LNK2001: unresolved external symbol __std_smf_comp_ellint_3
+module.def : error LNK2001: unresolved external symbol __std_smf_comp_ellint_3f
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_bessel_i
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_bessel_if
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_bessel_j
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_bessel_jf
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_bessel_k
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_bessel_kf
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_neumann
+module.def : error LNK2001: unresolved external symbol __std_smf_cyl_neumannf
+module.def : error LNK2001: unresolved external symbol __std_smf_ellint_1
+module.def : error LNK2001: unresolved external symbol __std_smf_ellint_1f
+module.def : error LNK2001: unresolved external symbol __std_smf_ellint_2
+module.def : error LNK2001: unresolved external symbol __std_smf_ellint_2f
+module.def : error LNK2001: unresolved external symbol __std_smf_ellint_3
+module.def : error LNK2001: unresolved external symbol __std_smf_ellint_3f
+module.def : error LNK2001: unresolved external symbol __std_smf_expint
+module.def : error LNK2001: unresolved external symbol __std_smf_expintf
+module.def : error LNK2001: unresolved external symbol __std_smf_hermite
+module.def : error LNK2001: unresolved external symbol __std_smf_hermitef
+module.def : error LNK2001: unresolved external symbol __std_smf_hypot3
+module.def : error LNK2001: unresolved external symbol __std_smf_hypot3f
+module.def : error LNK2001: unresolved external symbol __std_smf_laguerre
+module.def : error LNK2001: unresolved external symbol __std_smf_laguerref
+module.def : error LNK2001: unresolved external symbol __std_smf_legendre
+module.def : error LNK2001: unresolved external symbol __std_smf_legendref
+module.def : error LNK2001: unresolved external symbol __std_smf_riemann_zeta
+module.def : error LNK2001: unresolved external symbol __std_smf_riemann_zetaf
+module.def : error LNK2001: unresolved external symbol __std_smf_sph_bessel
+module.def : error LNK2001: unresolved external symbol __std_smf_sph_besself
+module.def : error LNK2001: unresolved external symbol __std_smf_sph_legendre
+module.def : error LNK2001: unresolved external symbol __std_smf_sph_legendref
+module.def : error LNK2001: unresolved external symbol __std_smf_sph_neumann
+module.def : error LNK2001: unresolved external symbol __std_smf_sph_neumannf
+module.def : error LNK2001: unresolved external symbol _local_unwind
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_add_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_add_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_add_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_add_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_add_r4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_add_r8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_and_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_and_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_and_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_and_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_r4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_r8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_ui1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_ui2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_ui4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_div_ui8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_mul_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_mul_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_mul_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_mul_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_mul_r4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_mul_r8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_or_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_or_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_or_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_or_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shl_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shl_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shl_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shl_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_ui1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_ui2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_ui4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_shr_ui8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_sub_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_sub_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_sub_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_sub_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_sub_r4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_sub_r8
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_xor_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_xor_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_xor_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_atomic_xor_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_barrier
+module.def : error LNK2001: unresolved external symbol _vcomp_copyprivate_broadcast
+module.def : error LNK2001: unresolved external symbol _vcomp_copyprivate_receive
+module.def : error LNK2001: unresolved external symbol _vcomp_enter_critsect
+module.def : error LNK2001: unresolved external symbol _vcomp_flush
+module.def : error LNK2001: unresolved external symbol _vcomp_for_dynamic_init
+module.def : error LNK2001: unresolved external symbol _vcomp_for_dynamic_init_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_for_dynamic_next
+module.def : error LNK2001: unresolved external symbol _vcomp_for_dynamic_next_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_for_static_end
+module.def : error LNK2001: unresolved external symbol _vcomp_for_static_init
+module.def : error LNK2001: unresolved external symbol _vcomp_for_static_init_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_for_static_simple_init
+module.def : error LNK2001: unresolved external symbol _vcomp_for_static_simple_init_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_fork
+module.def : error LNK2001: unresolved external symbol _vcomp_get_thread_num
+module.def : error LNK2001: unresolved external symbol _vcomp_leave_critsect
+module.def : error LNK2001: unresolved external symbol _vcomp_master_barrier
+module.def : error LNK2001: unresolved external symbol _vcomp_master_begin
+module.def : error LNK2001: unresolved external symbol _vcomp_master_end
+module.def : error LNK2001: unresolved external symbol _vcomp_ordered_begin
+module.def : error LNK2001: unresolved external symbol _vcomp_ordered_end
+module.def : error LNK2001: unresolved external symbol _vcomp_ordered_loop_end
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_i1
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_i2
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_i4
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_i8
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_r4
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_r8
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_u1
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_u2
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_u4
+module.def : error LNK2001: unresolved external symbol _vcomp_reduction_u8
+module.def : error LNK2001: unresolved external symbol _vcomp_sections_init
+module.def : error LNK2001: unresolved external symbol _vcomp_sections_next
+module.def : error LNK2001: unresolved external symbol _vcomp_set_num_threads
+module.def : error LNK2001: unresolved external symbol _vcomp_single_begin
+module.def : error LNK2001: unresolved external symbol _vcomp_single_end
+module.def : error LNK2001: unresolved external symbol null_memory_resource
+module.def : error LNK2001: unresolved external symbol omp_destroy_lock
+module.def : error LNK2001: unresolved external symbol omp_destroy_nest_lock
+module.def : error LNK2001: unresolved external symbol omp_get_dynamic
+module.def : error LNK2001: unresolved external symbol omp_get_max_threads
+module.def : error LNK2001: unresolved external symbol omp_get_nested
+module.def : error LNK2001: unresolved external symbol omp_get_num_procs
+module.def : error LNK2001: unresolved external symbol omp_get_num_threads
+module.def : error LNK2001: unresolved external symbol omp_get_thread_num
+C:\Users\tajimha.REDMOND\OneDrive - Microsoft\RegFree WinRT\RegFree WinRT Sample\vcruntime140_app\x64\Debug\vcruntime140_app.lib : fatal error LNK1120: 156 unresolved externals
