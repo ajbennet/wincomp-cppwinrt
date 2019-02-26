@@ -47,6 +47,7 @@ private:
 	com_ptr<ID2D1Factory1> CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
+	void CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory);
 	CompositionSurfaceBrush CreateD2DBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	bool CheckForDeviceRemoved(HRESULT hr);
@@ -55,12 +56,13 @@ private:
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
 	ImageInfo LoadImageCommon(_In_ IWICBitmapSource* source);
 	void PopulateImageInfoACKind(_Inout_ ImageInfo* info);
-	void Draw();
+	void Draw(Rect rect);
 
 
 	//member variables
-	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
-	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
+	com_ptr<::IDWriteFactory> m_dWriteFactory;
+	com_ptr<ID2D1DeviceContext5>     m_d2dContext;
+	com_ptr<::IDWriteTextFormat> m_textFormat;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
 	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
 	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;

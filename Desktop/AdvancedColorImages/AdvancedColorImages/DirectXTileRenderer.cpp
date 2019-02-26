@@ -194,10 +194,8 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 		)
 	);
 
-	com_ptr<IWICPixelFormatInfo2> pixelFormatInfo;
-	check_hresult(
-		componentInfo.as(&pixelFormatInfo)
-	);
+	com_ptr<IWICPixelFormatInfo2> pixelFormatInfo = componentInfo.as<IWICPixelFormatInfo2>;
+	
 
 	WICPixelFormatNumericRepresentation formatNumber;
 	check_hresult(
@@ -280,33 +278,6 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 }
 
 
-void DirectXTileRenderer::Draw()
-{
-	auto d2dContext = m_deviceResources->GetD2DDeviceContext();
-
-	d2dContext->BeginDraw();
-
-	d2dContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-
-	d2dContext->SetTransform(m_deviceResources->GetOrientationTransform2D());
-
-	if (m_scaledImage)
-	{
-		d2dContext->DrawImage(m_finalOutput.get(), m_imageOffset);
-
-		//EmitHdrMetadata();
-	}
-
-	// We ignore D2DERR_RECREATE_TARGET here. This error indicates that the device
-	// is lost. It will be handled during the next call to Present.
-	HRESULT hr = d2dContext->EndDraw();
-	if (hr != D2DERR_RECREATE_TARGET)
-	{
-		check_hresult(hr);
-	}
-
-	m_deviceResources->Present();
-}
 
 
 // Simplified heuristic to determine what advanced color kind the image is.
@@ -338,6 +309,31 @@ void DirectXTileRenderer::PopulateImageInfoACKind(_Inout_ ImageInfo* info)
 		info->imageKind = AdvancedColorKind::HighDynamicRange;
 	}
 }
+
+void DirectXTileRenderer::Draw(Rect rect)
+{
+	POINT offset;
+	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width - 5),  static_cast<LONG>(rect.Y + rect.Height - 5) };
+	// Begin our update of the surface pixels. If this is our first update, we are required
+	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+	// any time we make an update we touch the entire surface, so we always pass nullptr).
+	winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
+	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset))) {
+
+		d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+		
+		if (m_scaledImage)
+		{
+			d2dDeviceContext->DrawImage(m_finalOutput.get(), m_imageOffset);
+
+			//EmitHdrMetadata();
+		}
+
+		m_surfaceInterop->EndDraw();
+	}
+
+}
+
 
 
 
@@ -554,4 +550,25 @@ CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
 	surfaceBrush.TransformMatrix(make_float3x2_translation(20.0f, 20.0f));
 
 	return surfaceBrush;
+}
+
+void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory)
+{
+	// Create the Direct2D device object and a corresponding context.
+	com_ptr<IDXGIDevice3> dxgiDevice;
+	dxgiDevice = d3dDevice.as<IDXGIDevice3>();
+
+	com_ptr<ID2D1Device>            d2dDeviceTemp;
+	check_hresult(
+		d2dFactory->CreateDevice(dxgiDevice.get(), d2dDeviceTemp.put())
+	);
+	com_ptr<ID2D1Device5>            d2dDevice;
+	d2dDevice = d2dDeviceTemp.as<ID2D1Device5>();
+
+	check_hresult(
+		d2dDevice->CreateDeviceContext(
+			D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
+			m_d2dContext.put()
+		)
+	);
 }
