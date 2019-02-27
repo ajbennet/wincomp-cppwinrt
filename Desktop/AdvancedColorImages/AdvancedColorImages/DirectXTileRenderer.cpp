@@ -34,6 +34,7 @@ void DirectXTileRenderer::Initialize() {
 	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
 	com_ptr<ID3D11Device> const& device = CreateDevice();
 	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
+	CreateWicImagingFactory();
 
 	//TODO: move this out, so renderer is abstracted completely
 	m_compositor = WinComp::GetInstance()->m_compositor;
@@ -569,7 +570,10 @@ void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_
 			m_d2dContext.put()
 		)
 	);
+}
 
+void DirectXTileRenderer::CreateWicImagingFactory()
+{
 	check_hresult(
 		CoCreateInstance(
 			CLSID_WICImagingFactory2,
@@ -578,7 +582,6 @@ void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_
 			__uuidof(m_wicFactory),
 			m_wicFactory.put_void())
 	);
-
 }
 
 // Overrides any pan/zoom state set by the user to fit image to the window size.

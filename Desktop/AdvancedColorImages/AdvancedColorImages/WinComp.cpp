@@ -267,14 +267,14 @@ void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 
 		com_ptr<IStream> iStream;
 		check_hresult(
-			CreateStreamOverRandomAccessStream(ras, __uuidof(iStream), iStream.put_void())
+			CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void())
 		);
 
 		return m_TileDrawingManager.getRenderer()->LoadImageFromWic(iStream.get());
 		}).then([=](ImageInfo info) {
 			m_imageInfo = info;
 
-			m_TileDrawingManager.getRenderer()->CreateImageDependentResources();
+			//m_TileDrawingManager.getRenderer()->CreateImageDependentResources();
 
 			m_imageMaxCLL = m_TileDrawingManager.getRenderer()->FitImageToWindow(getWindowSize());
 
@@ -303,7 +303,7 @@ void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 			UpdateDefaultRenderOptions();
 
 			// Ensure the preceding continuation runs on the UI thread.
-			}, task_continuation_context::use_current()).then([=](task<void> previousTask) {
+			}, task_continuation_context::get_current_winrt_context()).then([=](task<void> previousTask) {
 				try
 				{
 					previousTask.get();

@@ -80,7 +80,7 @@ private:
 	CompositionPropertySet		m_animatingPropset = nullptr;
 	ExpressionAnimation			m_animateMatrix = nullptr;
 	ImageInfo					m_imageInfo;
-	AdvancedColorInfo const&	m_dispInfo;
+	AdvancedColorInfo const&	m_dispInfo{ nullptr };
 	bool						m_isImageValid;
 	float						m_imageMaxCLL;
 	float						m_lastTrackerScale = 1.0f;

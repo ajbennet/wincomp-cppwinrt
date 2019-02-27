@@ -1,7 +1,6 @@
 #pragma once
 
 #include "stdafx.h"
-#include "RenderOptions.h"
 
 using namespace winrt;
 using namespace Windows::System;
@@ -54,10 +53,10 @@ public:
 
 private:
 	float random(int maxValue);
-	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
-		winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
+	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
+	void CreateWicImagingFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
 	void CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory);
