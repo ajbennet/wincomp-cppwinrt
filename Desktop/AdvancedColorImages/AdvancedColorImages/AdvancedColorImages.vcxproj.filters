@@ -39,9 +39,6 @@
     <ClInclude Include="WinComp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RenderOptions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -70,6 +67,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="AdvancedColorImages.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\hdr-image.jpg">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

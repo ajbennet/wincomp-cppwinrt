@@ -24,6 +24,20 @@ struct ImageInfo
 	Windows::Graphics::Display::AdvancedColorKind   imageKind;
 };
 
+/// <summary>
+/// Supported render effects which are inserted into the render pipeline.
+/// Includes HDR tonemappers and useful visual tools.
+/// Each render effect is implemented as a custom Direct2D effect.
+/// </summary>
+enum class RenderEffectKind
+{
+	//ReinhardTonemap,
+	//FilmicTonemap,
+	None,
+	//SdrOverlay,
+	//LuminanceHeatmap
+};
+
 class DirectXTileRenderer
 {
 public:
@@ -33,11 +47,10 @@ public:
 	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
-	void SetRenderOptions(
-		RenderEffectKind effect,
-		float brightnessAdjustment,
-		AdvancedColorInfo const& acInfo
-	);
+	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo);
+	float FitImageToWindow(Size panelSize);
+	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
+
 
 private:
 	float random(int maxValue);
@@ -53,23 +66,22 @@ private:
 	bool CheckForDeviceRemoved(HRESULT hr);
 
 	void UpdateWhiteLevelScale(float brightnessAdjustment, float sdrWhiteLevel);
-	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
 	ImageInfo LoadImageCommon(_In_ IWICBitmapSource* source);
 	void PopulateImageInfoACKind(_Inout_ ImageInfo* info);
 	void Draw(Rect rect);
 
 
 	//member variables
-	com_ptr<::IDWriteFactory> m_dWriteFactory;
-	com_ptr<ID2D1DeviceContext5>     m_d2dContext;
-	com_ptr<::IDWriteTextFormat> m_textFormat;
+	com_ptr<::IDWriteFactory>				m_dWriteFactory;
+	com_ptr<ID2D1DeviceContext5>			m_d2dContext;
+	com_ptr<::IDWriteTextFormat>			m_textFormat;
+	com_ptr<ICompositionGraphicsDevice>		m_graphicsDevice = nullptr;
+	com_ptr<ICompositionGraphicsDevice2>	m_graphicsDevice2 = nullptr;
+	CompositionVirtualDrawingSurface		m_virtualSurfaceBrush = nullptr;
+	CompositionSurfaceBrush					m_surfaceBrush = nullptr;
+	Compositor								m_compositor = nullptr;
+	float									m_colorCounter = 0.0;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
-	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
-	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
-	CompositionVirtualDrawingSurface m_virtualSurfaceBrush = nullptr;
-	CompositionSurfaceBrush m_surfaceBrush = nullptr;
-	Compositor m_compositor = nullptr;
-	float m_colorCounter = 0.0;
 
 
 	//Advanced color 

@@ -580,3 +580,32 @@ void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_
 	);
 
 }
+
+// Overrides any pan/zoom state set by the user to fit image to the window size.
+// Returns the computed MaxCLL of the image in nits.
+float DirectXTileRenderer::FitImageToWindow(Size panelSize)
+{
+	if (m_imageSource)
+	{
+		// Set image to be letterboxed in the window, up to the max allowed scale factor.
+		float letterboxZoom = min(
+			panelSize.Width / m_imageInfo.size.Width,
+			panelSize.Height / m_imageInfo.size.Height);
+
+		m_zoom = min(sc_MaxZoom, letterboxZoom);
+
+		// Center the image.
+		m_imageOffset = D2D1::Point2F(
+			(panelSize.Width - (m_imageInfo.size.Width * m_zoom)) / 2.0f,
+			(panelSize.Height - (m_imageInfo.size.Height * m_zoom)) / 2.0f
+		);
+
+		//UpdateImageTransformState();
+
+		// HDR metadata is supposed to be independent of any rendering options, but
+		// we can't compute it until the full effect graph is hooked up, which is here.
+		//ComputeHdrMetadata();
+	}
+
+	return m_maxCLL;
+}
