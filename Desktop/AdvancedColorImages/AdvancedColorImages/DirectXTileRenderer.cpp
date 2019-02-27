@@ -61,14 +61,23 @@ CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 void DirectXTileRenderer::SetRenderOptions(
 	RenderEffectKind effect,
 	float brightnessAdjustment,
-	AdvancedColorInfo acInfo
+	AdvancedColorInfo const& acInfo
 )
 {
 	m_dispInfo = acInfo;
 	m_renderEffectKind = effect;
 	m_brightnessAdjust = brightnessAdjustment;
 
-	auto sdrWhite = m_dispInfo ? m_dispInfo.SdrWhiteLevelInNits: sc_nominalRefWhite;
+	float sdrWhite
+		//= m_dispInfo ?  : sc_nominalRefWhite
+		;
+
+	if (m_dispInfo ) {
+		sdrWhite = m_dispInfo.SdrWhiteLevelInNits();
+	}
+	else {
+		sdrWhite = sc_nominalRefWhite;
+	}
 
 	UpdateWhiteLevelScale(m_brightnessAdjust, sdrWhite);
 
@@ -86,7 +95,7 @@ void DirectXTileRenderer::SetRenderOptions(
 
 	}
 
-	Draw();
+	Draw(Rect(0, 0, 800, 800));
 }
 
 // When connected to an HDR display, the OS renders SDR content (e.g. 8888 UNORM) at
@@ -132,16 +141,15 @@ void DirectXTileRenderer::UpdateWhiteLevelScale(float brightnessAdjustment, floa
 // independent.
 ImageInfo DirectXTileRenderer::LoadImageFromWic(_In_ IStream* imageStream)
 {
-	auto wicFactory = m_deviceResources->GetWicImagingFactory();
-
+	
 	// Decode the image using WIC.
 	com_ptr<IWICBitmapDecoder> decoder;
 	check_hresult(
-		wicFactory->CreateDecoderFromStream(
+		m_wicFactory->CreateDecoderFromStream(
 			imageStream,
 			nullptr,
 			WICDecodeMetadataCacheOnDemand,
-			&decoder
+			decoder.put()
 		));
 
 	com_ptr<IWICBitmapFrameDecode> frame;
@@ -156,7 +164,6 @@ ImageInfo DirectXTileRenderer::LoadImageFromWic(_In_ IStream* imageStream)
 // Populates all members of ImageInfo.
 ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 {
-	auto wicFactory = m_deviceResources->GetWicImagingFactory();
 	m_imageInfo = {};
 
 	// Attempt to read the embedded color profile from the image; only valid for WIC images.
@@ -166,7 +173,7 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 	if (hr>=0)
 	{
 		check_hresult(
-			wicFactory->CreateColorContext(&m_wicColorContext)
+			m_wicFactory->CreateColorContext(m_wicColorContext.put())
 		);
 
 		check_hresult(
@@ -188,13 +195,13 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 
 	com_ptr<IWICComponentInfo> componentInfo;
 	check_hresult(
-		wicFactory->CreateComponentInfo(
+		m_wicFactory->CreateComponentInfo(
 			pixelFormat,
-			&componentInfo
+			componentInfo.put()
 		)
 	);
 
-	com_ptr<IWICPixelFormatInfo2> pixelFormatInfo = componentInfo.as<IWICPixelFormatInfo2>;
+	com_ptr<IWICPixelFormatInfo2> pixelFormatInfo = componentInfo.as<IWICPixelFormatInfo2>();
 	
 
 	WICPixelFormatNumericRepresentation formatNumber;
@@ -250,7 +257,7 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 	}
 
 	check_hresult(
-		wicFactory->CreateFormatConverter(&m_formatConvert)
+		m_wicFactory->CreateFormatConverter(m_formatConvert.put())
 	);
 
 	check_hresult(
@@ -571,4 +578,14 @@ void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_
 			m_d2dContext.put()
 		)
 	);
+
+	check_hresult(
+		CoCreateInstance(
+			CLSID_WICImagingFactory2,
+			nullptr,
+			CLSCTX_INPROC_SERVER,
+			__uuidof(m_wicFactory),
+			m_wicFactory.put_void())
+	);
+
 }

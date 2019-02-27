@@ -36,7 +36,7 @@ public:
 	void SetRenderOptions(
 		RenderEffectKind effect,
 		float brightnessAdjustment,
-		Windows::Graphics::Display::AdvancedColorInfo acInfo
+		AdvancedColorInfo const& acInfo
 	);
 
 private:
@@ -89,17 +89,18 @@ private:
 	com_ptr<ID2D1Effect>                     m_histogramPrescale;
 	com_ptr<ID2D1Effect>                     m_histogramEffect;
 	com_ptr<ID2D1Effect>                     m_finalOutput;
+	com_ptr<IWICImagingFactory2>			 m_wicFactory;
 
 	// Other renderer members.
-	RenderEffectKind                                        m_renderEffectKind;
-	float                                                   m_zoom;
-	float                                                   m_minZoom;
-	D2D1_POINT_2F                                           m_imageOffset;
-	D2D1_POINT_2F                                           m_pointerPos;
-	float                                                   m_maxCLL; // In nits.
-	float                                                   m_brightnessAdjust;
-	Windows::Graphics::Display::AdvancedColorInfo           m_dispInfo;
-	ImageInfo                                               m_imageInfo;
-	bool                                                    m_isComputeSupported;
+	RenderEffectKind                        m_renderEffectKind;
+	float                                   m_zoom;
+	float                                   m_minZoom;
+	D2D1_POINT_2F                           m_imageOffset;
+	D2D1_POINT_2F                           m_pointerPos;
+	float                                   m_maxCLL; // In nits.
+	float                                   m_brightnessAdjust;
+	AdvancedColorInfo						m_dispInfo{nullptr};
+	ImageInfo                               m_imageInfo;
+	bool                                    m_isComputeSupported;
 };
 
