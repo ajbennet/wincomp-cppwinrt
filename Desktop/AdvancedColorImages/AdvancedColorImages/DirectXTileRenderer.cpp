@@ -68,16 +68,7 @@ void DirectXTileRenderer::SetRenderOptions(
 	m_renderEffectKind = effect;
 	m_brightnessAdjust = brightnessAdjustment;
 
-	float sdrWhite
-		//= m_dispInfo ?  : sc_nominalRefWhite
-		;
-
-	if (m_dispInfo ) {
-		sdrWhite = m_dispInfo.SdrWhiteLevelInNits();
-	}
-	else {
-		sdrWhite = sc_nominalRefWhite;
-	}
+	auto sdrWhite = m_dispInfo ?  m_dispInfo.SdrWhiteLevelInNits(): sc_nominalRefWhite;
 
 	UpdateWhiteLevelScale(m_brightnessAdjust, sdrWhite);
 
