@@ -2,26 +2,23 @@
 
 #include "stdafx.h"
 #include "TileDrawingManager.h"
-#include <winrt/Windows.UI.Composition.Interactions.h>
-#include <ppltasks.h>
-#include <shcore.h>
 
-using namespace winrt;
-using namespace winrt::impl;
 using namespace concurrency;
-using namespace Windows::System;
-using namespace Windows::Storage;
-using namespace Windows::Storage::Streams;
-using namespace Windows::UI;
-using namespace Windows::UI::Composition;
-using namespace Windows::UI::Composition::Interactions;
-using namespace Windows::UI::Composition::Desktop;
-using namespace Windows::UI::Input;
-using namespace Windows::Graphics;
-using namespace Windows::Graphics::Display;
-using namespace Windows::Graphics::DirectX;
-using namespace Windows::Foundation;
-using namespace Windows::Foundation::Numerics;
+using namespace ::winrt;
+using namespace ::winrt::impl;
+using namespace winrt::Windows::System;
+using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Storage::Streams;
+using namespace winrt::Windows::Graphics;
+using namespace winrt::Windows::Graphics::Display;
+using namespace winrt::Windows::Graphics::DirectX;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Composition;
+using namespace winrt::Windows::UI::Composition::Interactions;
+using namespace winrt::Windows::UI::Composition::Desktop;
+using namespace winrt::Windows::UI::Input;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Numerics;
 
 
 class WinComp : public implements<WinComp, IInteractionTrackerOwner, no_weak_ref>

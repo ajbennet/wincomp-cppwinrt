@@ -36,7 +36,6 @@ DispatcherQueueController WinComp::EnsureDispatcherQueue()
 	check_hresult(CreateDispatcherQueueController(options, reinterpret_cast<abi::IDispatcherQueueController**>(put_abi(controller))));
 
 	return controller;
-
 }
 
 DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& compositor, HWND window)
@@ -261,7 +260,7 @@ void WinComp::LoadDefaultImage()
 
 void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 {
-	create_task(imageFile.OpenAsync(FileAccessMode::Read)
+	create_task((imageFile.OpenAsync(FileAccessMode::Read))
 	).then([=](IRandomAccessStream const& ras) {
 		// If file opening fails, fall through to error handler at the end of task chain.
 
@@ -303,17 +302,19 @@ void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 			UpdateDefaultRenderOptions();
 
 			// Ensure the preceding continuation runs on the UI thread.
-			}, task_continuation_context::get_current_winrt_context()).then([=](task<void> previousTask) {
-				try
-				{
-					previousTask.get();
-				}
-				catch (...)
-				{
-					// Errors resulting from failure to load/decode image are ignored.
-					return;
-				}
-				});
+			} 
+			///, task_continuation_context::get_current_winrt_context()
+			).then([=](task<void> previousTask) {
+			try
+			{
+				previousTask.get();
+			}
+			catch (...)
+			{
+				// Errors resulting from failure to load/decode image are ignored.
+				return;
+			}
+			});
 }
 
 Size WinComp::getWindowSize()

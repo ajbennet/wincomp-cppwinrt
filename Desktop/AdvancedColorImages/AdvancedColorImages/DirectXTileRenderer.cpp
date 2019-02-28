@@ -46,7 +46,22 @@ void DirectXTileRenderer::Initialize() {
 
 	InitializeTextLayout();
 }
-
+//
+//void DirectXTileRenderer::LoadImage(_In_ StorageFile const& imageFile)
+//{
+//	create_task(imageFile.OpenAsync(FileAccessMode::Read)
+//	).then([=](IRandomAccessStream const& ras) {
+//		// If file opening fails, fall through to error handler at the end of task chain.
+//
+//		com_ptr<IStream> iStream;
+//		check_hresult(
+//			CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void())
+//		);
+//
+//		return LoadImageFromWic(iStream.get());
+//		});
+//}
+//
 
 CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 {

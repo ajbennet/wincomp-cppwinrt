@@ -53,6 +53,7 @@ public:
 
 private:
 	float random(int maxValue);
+	//void LoadImage(_In_ StorageFile const& imageFile);
 	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
