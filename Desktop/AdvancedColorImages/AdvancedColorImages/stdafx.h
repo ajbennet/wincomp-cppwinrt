@@ -20,12 +20,14 @@
 
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.UI.Composition.Desktop.h>
 #include <winrt/Windows.UI.Composition.Interactions.h>
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.Graphics.h>
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.Graphics.DirectX.h>
+#include <winrt/Windows.Web.Syndication.h>
 
 WINRT_WARNING_PUSH
 

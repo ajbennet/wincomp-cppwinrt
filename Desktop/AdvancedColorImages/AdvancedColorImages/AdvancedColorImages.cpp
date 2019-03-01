@@ -26,7 +26,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
+	winrt::init_apartment();
     // TODO: Place code here.
 
     // Initialize global strings
@@ -139,8 +139,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	winComp->PrepareVisuals();
 	RECT windowRect;
 	::GetWindowRect(hWnd, &windowRect);
-	winComp->UpdateViewPort(windowRect, true);
-	winComp->ConfigureInteraction();
+	//winComp->UpdateViewPort(windowRect, true);
+	//winComp->ConfigureInteraction();
+	//auto processOp{
+	winComp->LoadDefaultImage();
+	//};
+	//processOp.get();
+	
 
 	return TRUE;
 }

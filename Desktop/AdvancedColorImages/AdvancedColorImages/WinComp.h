@@ -8,6 +8,7 @@ using namespace ::winrt;
 using namespace ::winrt::impl;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Web::Syndication;
 using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::Graphics;
 using namespace winrt::Windows::Graphics::Display;
@@ -39,7 +40,7 @@ public:
 	DispatcherQueueController EnsureDispatcherQueue();
 	void UpdateViewPort(RECT windowRect, boolean changeContentVisual);
 	void ConfigureInteraction();
-	void LoadDefaultImage();
+	IAsyncAction LoadDefaultImage();
 	void TryRedirectForManipulation(PointerPoint pp);
 	void TryUpdatePositionBy(float3 const& amount);
 
@@ -67,7 +68,7 @@ private:
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void AddVisual(VisualCollection const& visuals, float x, float y);
 	void StartAnimation(CompositionSurfaceBrush brush);
-	void LoadImage(_In_ StorageFile const& imageFile);
+	IAsyncAction LoadImage(_In_ StorageFile const& imageFile);
 	void UpdateDefaultRenderOptions();
 	void UpdateRenderOptions();
 	

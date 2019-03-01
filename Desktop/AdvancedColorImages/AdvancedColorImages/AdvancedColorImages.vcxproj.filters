@@ -69,7 +69,7 @@
     <Image Include="AdvancedColorImages.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="assets\hdr-image.jpg">
+    <Image Include="hdr-image.jpg">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
