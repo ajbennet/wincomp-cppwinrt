@@ -142,8 +142,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	//winComp->UpdateViewPort(windowRect, true);
 	//winComp->ConfigureInteraction();
 	//auto processOp{
-	winComp->LoadDefaultImage();
-	//};
+	//winComp->LoadDefaultImage().get();
 	//processOp.get();
 	
 
@@ -171,7 +170,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
             case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                //DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+				WinComp::GetInstance()->OpenFilePicker().get();
+
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);

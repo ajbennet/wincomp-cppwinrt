@@ -262,12 +262,28 @@ IAsyncAction WinComp::LoadDefaultImage()
 	//Windows::Storage::StorageFolder storageFolder{ Windows::Storage::ApplicationData::Current().LocalFolder() };
 	//StorageFile imageFile{ co_await storageFolder.GetFileAsync(L"hdr-image.jpg") };
 
-	LoadImage(imageFile) ;
+	co_await LoadImage(imageFile) ;
 	//processOp.get();
 	
 }
 
-IAsyncAction WinComp::LoadImage(_In_ StorageFile const& imageFile)
+
+IAsyncAction WinComp::OpenFilePicker()
+{
+	FileOpenPicker picker;
+	picker.SuggestedStartLocation(PickerLocationId::Desktop);
+	picker.FileTypeFilter().Append(L".jxr");
+	picker.FileTypeFilter().Append(L".jpg");
+	picker.FileTypeFilter().Append(L".png");
+	picker.FileTypeFilter().Append(L".tif");
+
+	StorageFile imageFile{ co_await picker.PickSingleFileAsync() };
+	co_await LoadImage(imageFile);
+	//processOp.get();
+
+}
+
+IAsyncOperation<int> WinComp::LoadImage(StorageFile  imageFile)
 {
 
 	IRandomAccessStream ras{ co_await imageFile.OpenAsync(Windows::Storage::FileAccessMode::Read) };
@@ -279,6 +295,8 @@ IAsyncAction WinComp::LoadImage(_In_ StorageFile const& imageFile)
 	// Image loading is done at this point.
 	m_isImageValid = true;
 	UpdateDefaultRenderOptions();
+
+	co_return 1;
 	
 	/*
 

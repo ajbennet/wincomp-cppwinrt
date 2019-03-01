@@ -8,6 +8,7 @@ using namespace ::winrt;
 using namespace ::winrt::impl;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Windows::Web::Syndication;
 using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::Graphics;
@@ -41,6 +42,7 @@ public:
 	void UpdateViewPort(RECT windowRect, boolean changeContentVisual);
 	void ConfigureInteraction();
 	IAsyncAction LoadDefaultImage();
+	IAsyncAction OpenFilePicker();
 	void TryRedirectForManipulation(PointerPoint pp);
 	void TryUpdatePositionBy(float3 const& amount);
 
@@ -68,7 +70,7 @@ private:
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void AddVisual(VisualCollection const& visuals, float x, float y);
 	void StartAnimation(CompositionSurfaceBrush brush);
-	IAsyncAction LoadImage(_In_ StorageFile const& imageFile);
+	IAsyncOperation<int> LoadImage(StorageFile imageFile);
 	void UpdateDefaultRenderOptions();
 	void UpdateRenderOptions();
 	
