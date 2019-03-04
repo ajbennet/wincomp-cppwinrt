@@ -268,9 +268,10 @@ IAsyncAction WinComp::LoadDefaultImage()
 }
 
 
-IAsyncAction WinComp::OpenFilePicker()
+IAsyncAction WinComp::OpenFilePicker(HWND hwnd)
 {
 	FileOpenPicker picker;
+	picker.as<IInitializeWithWindow>()->Initialize(hwnd);
 	picker.SuggestedStartLocation(PickerLocationId::Desktop);
 	picker.FileTypeFilter().Append(L".jxr");
 	picker.FileTypeFilter().Append(L".jpg");

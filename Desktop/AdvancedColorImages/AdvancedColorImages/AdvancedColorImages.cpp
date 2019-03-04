@@ -171,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case IDM_ABOUT:
                 //DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-				WinComp::GetInstance()->OpenFilePicker().get();
+				WinComp::GetInstance()->OpenFilePicker(hWnd);
 
                 break;
             case IDM_EXIT:

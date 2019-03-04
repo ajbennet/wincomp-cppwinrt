@@ -42,7 +42,7 @@ public:
 	void UpdateViewPort(RECT windowRect, boolean changeContentVisual);
 	void ConfigureInteraction();
 	IAsyncAction LoadDefaultImage();
-	IAsyncAction OpenFilePicker();
+	IAsyncAction OpenFilePicker(HWND hwnd);
 	void TryRedirectForManipulation(PointerPoint pp);
 	void TryUpdatePositionBy(float3 const& amount);
 

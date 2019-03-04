@@ -15,6 +15,7 @@
 #include <memory.h>
 #include <tchar.h>
 #include <shcore.h>
+#include <shobjidl_core.h>
 #include <ppltasks.h>
 
 
