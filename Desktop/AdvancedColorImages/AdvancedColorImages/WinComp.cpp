@@ -282,6 +282,16 @@ IAsyncAction WinComp::OpenFilePicker(HWND hwnd)
 	co_await LoadImage(imageFile);
 	//processOp.get();
 
+
+}
+
+void WinComp::LoadImage(LPCWSTR szFileName)
+{
+	ImageInfo info{ m_TileDrawingManager.getRenderer()->LoadImageFromWic(szFileName) };
+
+	// Image loading is done at this point.
+	m_isImageValid = true;
+	UpdateDefaultRenderOptions();
 }
 
 IAsyncOperation<int> WinComp::LoadImage(StorageFile  imageFile)

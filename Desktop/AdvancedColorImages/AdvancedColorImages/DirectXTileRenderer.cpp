@@ -167,6 +167,39 @@ ImageInfo DirectXTileRenderer::LoadImageFromWic(_In_ IStream* imageStream)
 	return LoadImageCommon(frame.get());
 }
 
+
+// Reads the provided File and decodes an image from it using WIC. These resources are device-
+// independent.
+ImageInfo DirectXTileRenderer::LoadImageFromWic(LPCWSTR szFileName)
+{
+
+		// Create a decoder
+		IWICBitmapDecoder *pDecoder = nullptr;
+
+		// Decode the image using WIC.
+		com_ptr<IWICBitmapDecoder> decoder;
+		check_hresult(
+			m_wicFactory->CreateDecoderFromFilename(
+				szFileName,                      // Image to be decoded
+				nullptr,                         // Do not prefer a particular vendor
+				GENERIC_READ,                    // Desired read access to the file
+				WICDecodeMetadataCacheOnDemand,  // Cache metadata when needed
+				decoder.put()					 // Pointer to the decoder
+			));
+
+
+		// Retrieve the first frame of the image from the decoder
+		com_ptr<IWICBitmapFrameDecode> frame;
+		check_hresult(
+			decoder->GetFrame(0, frame.put())
+		);
+
+		return LoadImageCommon(frame.get());
+
+}
+
+
+
 // After initial decode, obtain image information and do common setup.
 // Populates all members of ImageInfo.
 ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)

@@ -137,8 +137,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	winComp->Initialize(hWnd);
 	winComp->PrepareVisuals();
-	RECT windowRect;
-	::GetWindowRect(hWnd, &windowRect);
+	//RECT windowRect;
+	//::GetWindowRect(hWnd, &windowRect);
 	//winComp->UpdateViewPort(windowRect, true);
 	//winComp->ConfigureInteraction();
 	//auto processOp{
@@ -148,6 +148,35 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	return TRUE;
 }
+
+bool LocateImageFile(HWND hWnd, LPWSTR pszFileName, DWORD cchFileName)
+{
+	pszFileName[0] = L'\0';
+
+	OPENFILENAME ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hWnd;
+	ofn.lpstrFilter = L"All Image Files\0"              L"*.bmp;*.dib;*.wdp;*.mdp;*.hdp;*.gif;*.png;*.jpg;*.jpeg;*.tif;*.ico\0"
+		L"Windows Bitmap\0"               L"*.bmp;*.dib\0"
+		L"High Definition Photo\0"        L"*.wdp;*.mdp;*.hdp\0"
+		L"Graphics Interchange Format\0"  L"*.gif\0"
+		L"Portable Network Graphics\0"    L"*.png\0"
+		L"JPEG File Interchange Format\0" L"*.jpg;*.jpeg\0"
+		L"Tiff File\0"                    L"*.tif\0"
+		L"Icon\0"                         L"*.ico\0"
+		L"All Files\0"                    L"*.*\0"
+		L"\0";
+	ofn.lpstrFile = pszFileName;
+	ofn.nMaxFile = cchFileName;
+	ofn.lpstrTitle = L"Open Image";
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+
+	// Display the Open dialog box. 
+	return (GetOpenFileName(&ofn) == TRUE);
+}
+
 
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -171,7 +200,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
             case IDM_ABOUT:
                 //DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-				WinComp::GetInstance()->OpenFilePicker(hWnd);
+				
+				WCHAR szFileName[MAX_PATH];
+
+				if (LocateImageFile(hWnd, szFileName, ARRAYSIZE(szFileName)))
+				{
+					WinComp::GetInstance()->LoadImage(szFileName);
+
+				}
+				else 
+				{
+
+					MessageBox(hWnd, L"Failed to load image, select a new one.", L"Application Error", MB_ICONEXCLAMATION | MB_OK);
+				}
 
                 break;
             case IDM_EXIT:
@@ -224,3 +265,4 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+

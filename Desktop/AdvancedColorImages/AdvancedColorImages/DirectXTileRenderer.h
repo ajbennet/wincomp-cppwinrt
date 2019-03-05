@@ -49,6 +49,8 @@ public:
 	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo);
 	float FitImageToWindow(Size panelSize);
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
+	ImageInfo LoadImageFromWic(LPCWSTR szFileName);
+
 
 
 private:

@@ -43,6 +43,7 @@ public:
 	void ConfigureInteraction();
 	IAsyncAction LoadDefaultImage();
 	IAsyncAction OpenFilePicker(HWND hwnd);
+	void LoadImage(LPCWSTR szFileName);
 	void TryRedirectForManipulation(PointerPoint pp);
 	void TryUpdatePositionBy(float3 const& amount);
 
