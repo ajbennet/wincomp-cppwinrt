@@ -59,13 +59,13 @@ private:
 	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
 	void InitializeTextLayout();
 	com_ptr<ID2D1Factory1> CreateFactory();
-	void CreateWicImagingFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
-	void CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory);
+	void CreateImageDependentResources(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory);
 	CompositionSurfaceBrush CreateD2DBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	bool CheckForDeviceRemoved(HRESULT hr);
+	void UpdateImageTransformState();
 
 	void UpdateWhiteLevelScale(float brightnessAdjustment, float sdrWhiteLevel);
 	ImageInfo LoadImageCommon(_In_ IWICBitmapSource* source);

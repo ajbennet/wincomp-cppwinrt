@@ -33,9 +33,10 @@
 
 WINRT_WARNING_PUSH
 
+#include <dxgi1_6.h>
 #include <d2d1_3.h>
-#include <d3d11_4.h>
-#include <Dwrite.h>
+#include <d3d11_3.h>
+#include <Dwrite_3.h>
 #include <wincodec.h>
 #include <windows.foundation.h>
 #include <windows.foundation.numerics.h>
