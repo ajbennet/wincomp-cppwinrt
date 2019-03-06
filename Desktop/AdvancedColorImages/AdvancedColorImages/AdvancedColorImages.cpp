@@ -141,11 +141,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	//::GetWindowRect(hWnd, &windowRect);
 	//winComp->UpdateViewPort(windowRect, true);
 	//winComp->ConfigureInteraction();
-	//auto processOp{
-	//winComp->LoadDefaultImage().get();
-	//processOp.get();
 	
-
 	return TRUE;
 }
 

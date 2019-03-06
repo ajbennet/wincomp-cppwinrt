@@ -85,6 +85,7 @@ void WinComp::PrepareVisuals()
 	
 	auto visuals = root.Children();
 	AddD2DVisual(visuals, 0.0f, 0.0f);
+	
 }
 
 void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)

@@ -89,7 +89,7 @@ void DirectXTileRenderer::SetRenderOptions(
 
 	}
 
-	Draw(Rect(0, 0, 800, 800));
+	Draw(Rect(0, 0, 4000, 6000));
 }
 
 // When connected to an HDR display, the OS renders SDR content (e.g. 8888 UNORM) at
@@ -360,11 +360,28 @@ void DirectXTileRenderer::Draw(Rect rect)
 		
 		if (m_scaledImage)
 		{
-			d2dDeviceContext->DrawImage(m_finalOutput.get(), m_imageOffset);
+			
 
+			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+
+			D2D_POINT_2F d2dOffset{offset.x, offset.y};
+
+			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
+			
+			//Generating colors to distinguish each tile.
+			//m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
+			//D2D1::ColorF randomColor(m_colorCounter / 256, 1.0f, 0.0f, 0.5f);
+			//D2D1_RECT_F tileRectangle{ offset.x , offset.y , offset.x + rect.Width, offset.y + rect.Height };
+
+			//winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
+			////Draw the rectangle
+			//winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+			//	randomColor, tilebrush.put()));
+
+			//d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
 			//EmitHdrMetadata();
 		}
-
+		check_hresult(d2dDeviceContext->Flush());
 		m_surfaceInterop->EndDraw();
 	}
 
@@ -628,9 +645,9 @@ void DirectXTileRenderer::CreateDeviceIndependentResources()
 	m_compositor = WinComp::GetInstance()->m_compositor;
 
 	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
-	com_ptr<ID2D1Device> d2device;
-	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), d2device.put()));
-	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
+	
+	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), m_d2device.put()));
+	check_hresult(interopCompositor->CreateGraphicsDevice(m_d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 	check_hresult(
 		CoCreateInstance(
 			CLSID_WICImagingFactory2,
@@ -647,12 +664,9 @@ void DirectXTileRenderer::CreateImageDependentResources()
 	com_ptr<IDXGIDevice3> dxgiDevice;
 	dxgiDevice = m_d3dDevice.as<IDXGIDevice3>();
 
-	com_ptr<ID2D1Device>            d2dDeviceTemp;
-	check_hresult(
-		m_d2dFactory->CreateDevice(dxgiDevice.get(), d2dDeviceTemp.put())
-	);
+	
 	com_ptr<ID2D1Device5>            d2dDevice;
-	d2dDevice = d2dDeviceTemp.as<ID2D1Device5>();
+	d2dDevice = m_d2device.as<ID2D1Device5>();
 
 	check_hresult(
 		d2dDevice->CreateDeviceContext(
@@ -669,6 +683,38 @@ void DirectXTileRenderer::CreateImageDependentResources()
 		)
 	);
 
+	check_hresult(
+		m_d2dContext->CreateEffect(CLSID_D2D1ColorManagement, m_colorManagementEffect.put())
+	);
+
+	check_hresult(
+		m_colorManagementEffect->SetValue(
+			D2D1_COLORMANAGEMENT_PROP_QUALITY,
+			D2D1_COLORMANAGEMENT_QUALITY_BEST   // Required for floating point and DXGI color space support.
+		)
+	);
+
+
+	UpdateImageColorContext();
+
+	// The destination color space is the render target's (swap chain's) color space. This app uses an
+	// FP16 swap chain, which requires the colorspace to be scRGB.
+	com_ptr<ID2D1ColorContext1> destColorContext;
+	check_hresult(
+		m_d2dContext->CreateColorContextFromDxgiColorSpace(
+			DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, // scRGB
+			destColorContext.put()
+		)
+	);
+
+	check_hresult(
+		m_colorManagementEffect->SetValue(
+			D2D1_COLORMANAGEMENT_PROP_DESTINATION_COLOR_CONTEXT,
+			destColorContext.get()
+		)
+	);
+
+
 	// White level scale is used to multiply the color values in the image; this allows the user
    // to adjust the brightness of the image on an HDR display.
 	check_hresult(m_d2dContext->CreateEffect(CLSID_D2D1ColorMatrix, m_whiteScaleEffect.put()));
@@ -676,6 +722,44 @@ void DirectXTileRenderer::CreateImageDependentResources()
 	// Input to white level scale may be modified in SetRenderOptions.
 	m_whiteScaleEffect->SetInputEffect(0, m_colorManagementEffect.get());
 
+
+}
+
+// Derive the source color context from the image (embedded ICC profile or metadata).
+void DirectXTileRenderer::UpdateImageColorContext()
+{
+	com_ptr<ID2D1ColorContext> sourceColorContext;
+
+	// For most image types, automatically derive the color context from the image.
+	if (m_imageInfo.numProfiles >= 1)
+	{
+		check_hresult(
+			m_d2dContext->CreateColorContextFromWicColorContext(
+				m_wicColorContext.get(),
+				sourceColorContext.put()
+			)
+		);
+	}
+	else
+	{
+		// Since no embedded color profile/metadata exists, select a default
+		// based on the pixel format: floating point == scRGB, others == sRGB.
+		check_hresult(
+			m_d2dContext->CreateColorContext(
+				m_imageInfo.isFloat ? D2D1_COLOR_SPACE_SCRGB : D2D1_COLOR_SPACE_SRGB,
+				nullptr,
+				0,
+				sourceColorContext.put()
+			)
+		);
+	}
+
+	check_hresult(
+		m_colorManagementEffect->SetValue(
+			D2D1_COLORMANAGEMENT_PROP_SOURCE_COLOR_CONTEXT,
+			sourceColorContext.get()
+		)
+	);
 }
 
 // Overrides any pan/zoom state set by the user to fit image to the window size.
