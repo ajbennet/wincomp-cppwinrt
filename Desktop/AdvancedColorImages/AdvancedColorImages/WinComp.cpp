@@ -248,18 +248,69 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 	}
 }
 
-void WinComp::LoadDefaultImage()
+IAsyncAction WinComp::LoadDefaultImage()
 {
 	Uri uri(L"https://mediaplatstorage1.blob.core.windows.net/windows-universal-samples-media/image-scrgb-icc.jxr");
 
-	create_task(StorageFile::CreateStreamedFileFromUriAsync(L"image-scRGB-ICC.jxr", uri, nullptr)).then([=](StorageFile const& imageFile)
+	/*create_task(StorageFile::CreateStreamedFileFromUriAsync(L"image-scRGB-ICC.jxr", uri, nullptr)).then([=](StorageFile const& imageFile)
 		{
 			LoadImage(imageFile);
 		});
+	*/
+
+	StorageFile imageFile{ co_await StorageFile::CreateStreamedFileFromUriAsync(L"image-scRGB-ICC.jxr", uri, nullptr) };
+	//Windows::Storage::StorageFolder storageFolder{ Windows::Storage::ApplicationData::Current().LocalFolder() };
+	//StorageFile imageFile{ co_await storageFolder.GetFileAsync(L"hdr-image.jpg") };
+
+	co_await LoadImage(imageFile) ;
+	//processOp.get();
+	
 }
 
-void WinComp::LoadImage(_In_ StorageFile const& imageFile)
+
+IAsyncAction WinComp::OpenFilePicker(HWND hwnd)
 {
+	FileOpenPicker picker;
+	picker.as<IInitializeWithWindow>()->Initialize(hwnd);
+	picker.SuggestedStartLocation(PickerLocationId::Desktop);
+	picker.FileTypeFilter().Append(L".jxr");
+	picker.FileTypeFilter().Append(L".jpg");
+	picker.FileTypeFilter().Append(L".png");
+	picker.FileTypeFilter().Append(L".tif");
+
+	StorageFile imageFile{ co_await picker.PickSingleFileAsync() };
+	co_await LoadImage(imageFile);
+	//processOp.get();
+
+
+}
+
+void WinComp::LoadImage(LPCWSTR szFileName)
+{
+	ImageInfo info{ m_TileDrawingManager.getRenderer()->LoadImageFromWic(szFileName) };
+
+	// Image loading is done at this point.
+	m_isImageValid = true;
+	UpdateDefaultRenderOptions();
+}
+
+IAsyncOperation<int> WinComp::LoadImage(StorageFile  imageFile)
+{
+
+	IRandomAccessStream ras{ co_await imageFile.OpenAsync(Windows::Storage::FileAccessMode::Read) };
+
+	com_ptr<IStream> iStream{ nullptr };
+	check_hresult(CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void()));
+	ImageInfo info{ m_TileDrawingManager.getRenderer()->LoadImageFromWic(iStream.get()) };
+
+	// Image loading is done at this point.
+	m_isImageValid = true;
+	UpdateDefaultRenderOptions();
+
+	co_return 1;
+	
+	/*
+
 	create_task((imageFile.OpenAsync(FileAccessMode::Read))
 	).then([=](IRandomAccessStream const& ras) {
 		// If file opening fails, fall through to error handler at the end of task chain.
@@ -278,7 +329,7 @@ void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 			m_imageMaxCLL = m_TileDrawingManager.getRenderer()->FitImageToWindow(getWindowSize());
 
 			//TODO: Display this information later.
-			/*ApplicationView::GetForCurrentView()->Title = imageFile->Name;
+			ApplicationView::GetForCurrentView()->Title = imageFile->Name;
 			ImageACKind->Text = L"Kind: " + ConvertACKindToString(m_imageInfo.imageKind);
 			ImageHasColorProfile->Text = L"Color profile: " + (m_imageInfo.numProfiles > 0 ? L"Yes" : L"No");
 			ImageBitDepth->Text = L"Bit depth: " + ref new String(std::to_wstring(m_imageInfo.bitsPerChannel).c_str());
@@ -295,7 +346,7 @@ void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 				cllStr << std::to_wstring(static_cast<int>(m_imageMaxCLL)) << L" nits";
 			}
 
-			ImageMaxCLL->Text = ref new String(cllStr.str().c_str());*/
+			ImageMaxCLL->Text = ref new String(cllStr.str().c_str());
 
 			// Image loading is done at this point.
 			m_isImageValid = true;
@@ -315,6 +366,7 @@ void WinComp::LoadImage(_In_ StorageFile const& imageFile)
 				return;
 			}
 			});
+			*/
 }
 
 Size WinComp::getWindowSize()

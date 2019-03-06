@@ -34,7 +34,7 @@ void DirectXTileRenderer::Initialize() {
 	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
 	com_ptr<ID3D11Device> const& device = CreateDevice();
 	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
-	CreateWicImagingFactory();
+	CreateImageDependentResources(device, factory);
 
 	//TODO: move this out, so renderer is abstracted completely
 	m_compositor = WinComp::GetInstance()->m_compositor;
@@ -44,6 +44,7 @@ void DirectXTileRenderer::Initialize() {
 	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
 	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 
+	UpdateImageTransformState();
 	InitializeTextLayout();
 }
 //
@@ -167,6 +168,39 @@ ImageInfo DirectXTileRenderer::LoadImageFromWic(_In_ IStream* imageStream)
 	return LoadImageCommon(frame.get());
 }
 
+
+// Reads the provided File and decodes an image from it using WIC. These resources are device-
+// independent.
+ImageInfo DirectXTileRenderer::LoadImageFromWic(LPCWSTR szFileName)
+{
+
+		// Create a decoder
+		IWICBitmapDecoder *pDecoder = nullptr;
+
+		// Decode the image using WIC.
+		com_ptr<IWICBitmapDecoder> decoder;
+		check_hresult(
+			m_wicFactory->CreateDecoderFromFilename(
+				szFileName,                      // Image to be decoded
+				nullptr,                         // Do not prefer a particular vendor
+				GENERIC_READ,                    // Desired read access to the file
+				WICDecodeMetadataCacheOnDemand,  // Cache metadata when needed
+				decoder.put()					 // Pointer to the decoder
+			));
+
+
+		// Retrieve the first frame of the image from the decoder
+		com_ptr<IWICBitmapFrameDecode> frame;
+		check_hresult(
+			decoder->GetFrame(0, frame.put())
+		);
+
+		return LoadImageCommon(frame.get());
+
+}
+
+
+
 // After initial decode, obtain image information and do common setup.
 // Populates all members of ImageInfo.
 ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
@@ -183,10 +217,12 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 			m_wicFactory->CreateColorContext(m_wicColorContext.put())
 		);
 
+		IWICColorContext * temp = m_wicColorContext.get();
+
 		check_hresult(
 			frame->GetColorContexts(
 				1,
-				m_wicColorContext.put(),
+				&temp,
 				&m_imageInfo.numProfiles
 			)
 		);
@@ -347,6 +383,36 @@ void DirectXTileRenderer::Draw(Rect rect)
 	}
 
 }
+
+// Call this after updating any spatial transform state to regenerate the effect graph.
+void DirectXTileRenderer::UpdateImageTransformState()
+{
+	if (m_imageSource)
+	{
+		// When using ID2D1ImageSource, the recommend method of scaling is to use
+		// ID2D1TransformedImageSource. It is inexpensive to recreate this object.
+		D2D1_TRANSFORMED_IMAGE_SOURCE_PROPERTIES props =
+		{
+			D2D1_ORIENTATION_DEFAULT,
+			m_zoom,
+			m_zoom,
+			D2D1_INTERPOLATION_MODE_LINEAR, // This is ignored when using DrawImage.
+			D2D1_TRANSFORMED_IMAGE_SOURCE_OPTIONS_NONE
+		};
+
+		check_hresult(
+			m_d2dContext->CreateTransformedImageSource(
+				m_imageSource.get(),
+				&props,
+				m_scaledImage.put()
+			)
+		);
+
+		// Set the new image as the new source to the effect pipeline.
+		m_colorManagementEffect->SetInput(0, m_scaledImage.get());
+	}
+}
+
 
 
 
@@ -566,7 +632,7 @@ CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
 	return surfaceBrush;
 }
 
-void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory)
+void DirectXTileRenderer::CreateImageDependentResources(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory)
 {
 	// Create the Direct2D device object and a corresponding context.
 	com_ptr<IDXGIDevice3> dxgiDevice;
@@ -585,10 +651,14 @@ void DirectXTileRenderer::CreateD2DContext(com_ptr<ID3D11Device> d3dDevice, com_
 			m_d2dContext.put()
 		)
 	);
-}
 
-void DirectXTileRenderer::CreateWicImagingFactory()
-{
+	// White level scale is used to multiply the color values in the image; this allows the user
+   // to adjust the brightness of the image on an HDR display.
+	check_hresult(m_d2dContext->CreateEffect(CLSID_D2D1ColorMatrix, m_whiteScaleEffect.put()));
+
+	// Input to white level scale may be modified in SetRenderOptions.
+	m_whiteScaleEffect->SetInputEffect(0, m_colorManagementEffect.get());
+
 	check_hresult(
 		CoCreateInstance(
 			CLSID_WICImagingFactory2,
@@ -597,6 +667,7 @@ void DirectXTileRenderer::CreateWicImagingFactory()
 			__uuidof(m_wicFactory),
 			m_wicFactory.put_void())
 	);
+
 }
 
 // Overrides any pan/zoom state set by the user to fit image to the window size.
