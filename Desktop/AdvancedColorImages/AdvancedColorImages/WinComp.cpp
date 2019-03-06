@@ -55,9 +55,9 @@ void WinComp::Initialize(HWND hwnd)
 	m_window = hwnd;
 	Compositor compositor;
 	m_compositor = compositor;
-	DirectXTileRenderer* dxRenderer = new DirectXTileRenderer();
-	dxRenderer->Initialize();
-	m_TileDrawingManager.setRenderer(dxRenderer);
+	m_renderer.Initialize();
+	m_TileDrawingManager.setRenderer(m_renderer);
+
 
 }
 
@@ -119,7 +119,7 @@ void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
 {
 	auto compositor = visuals.Compositor();
 	m_contentVisual = compositor.CreateSpriteVisual();
-	m_contentVisual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
+	m_contentVisual.Brush(m_renderer.getSurfaceBrush());
 
 	m_contentVisual.Size(getWindowSize());
 	m_contentVisual.Offset({ x, y, 0.0f, });
@@ -185,7 +185,7 @@ void WinComp::ConfigureInteraction()
 	m_tracker.MinScale(0.1f);
 	m_tracker.MaxScale(10.0f);
 	
-	StartAnimation(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
+	StartAnimation(m_renderer.getSurfaceBrush());
 }
 
 // interactionTrackerowner
@@ -287,7 +287,10 @@ IAsyncAction WinComp::OpenFilePicker(HWND hwnd)
 
 void WinComp::LoadImage(LPCWSTR szFileName)
 {
-	ImageInfo info{ m_TileDrawingManager.getRenderer()->LoadImageFromWic(szFileName) };
+
+	ImageInfo info{ m_renderer.LoadImageFromWic(szFileName) };
+	m_renderer.CreateImageDependentResources();
+	m_renderer.FitImageToWindow(Size{800,800});
 
 	// Image loading is done at this point.
 	m_isImageValid = true;
@@ -301,7 +304,7 @@ IAsyncOperation<int> WinComp::LoadImage(StorageFile  imageFile)
 
 	com_ptr<IStream> iStream{ nullptr };
 	check_hresult(CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void()));
-	ImageInfo info{ m_TileDrawingManager.getRenderer()->LoadImageFromWic(iStream.get()) };
+	ImageInfo info{ m_renderer.LoadImageFromWic(iStream.get()) };
 
 	// Image loading is done at this point.
 	m_isImageValid = true;
@@ -320,13 +323,13 @@ IAsyncOperation<int> WinComp::LoadImage(StorageFile  imageFile)
 			CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void())
 		);
 
-		return m_TileDrawingManager.getRenderer()->LoadImageFromWic(iStream.get());
+		return m_renderer.LoadImageFromWic(iStream.get());
 		}).then([=](ImageInfo info) {
 			m_imageInfo = info;
 
-			//m_TileDrawingManager.getRenderer()->CreateImageDependentResources();
+			//m_renderer.CreateImageDependentResources();
 
-			m_imageMaxCLL = m_TileDrawingManager.getRenderer()->FitImageToWindow(getWindowSize());
+			m_imageMaxCLL = m_renderer.FitImageToWindow(getWindowSize());
 
 			//TODO: Display this information later.
 			ApplicationView::GetForCurrentView()->Title = imageFile->Name;
@@ -394,15 +397,12 @@ void WinComp::UpdateDefaultRenderOptions()
 // Common method for updating options on the renderer.
 void WinComp::UpdateRenderOptions()
 {
-	if ((m_TileDrawingManager.getRenderer() != nullptr))
-	{
-		
-		m_TileDrawingManager.getRenderer()->SetRenderOptions(
+		m_renderer.SetRenderOptions(
 			RenderEffectKind::None,
 			static_cast<float>(3),
 			m_dispInfo
 		);
-	}
+	
 }
 
 

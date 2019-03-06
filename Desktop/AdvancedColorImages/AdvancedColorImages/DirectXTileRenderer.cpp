@@ -29,22 +29,8 @@ DirectXTileRenderer::~DirectXTileRenderer()
 }
 
 void DirectXTileRenderer::Initialize() {
-	namespace abi = ABI::Windows::UI::Composition;
-
-	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
-	com_ptr<ID3D11Device> const& device = CreateDevice();
-	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
-	CreateImageDependentResources(device, factory);
-
-	//TODO: move this out, so renderer is abstracted completely
-	m_compositor = WinComp::GetInstance()->m_compositor;
-
-	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
-	com_ptr<ID2D1Device> d2device;
-	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
-	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
-
-	UpdateImageTransformState();
+	
+	CreateDeviceIndependentResources();
 	InitializeTextLayout();
 }
 //
@@ -554,7 +540,7 @@ void DirectXTileRenderer::InitializeTextLayout()
 
 }
 
-com_ptr<ID2D1Factory1> DirectXTileRenderer::CreateFactory()
+void DirectXTileRenderer::CreateFactory()
 {
 	D2D1_FACTORY_OPTIONS options{};
 	com_ptr<ID2D1Factory1> factory;
@@ -562,14 +548,13 @@ com_ptr<ID2D1Factory1> DirectXTileRenderer::CreateFactory()
 	check_hresult(D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
 		options,
-		factory.put()));
+		m_d2dFactory.put()));
 
-	return factory;
 }
 
-HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device)
+HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type)
 {
-	WINRT_ASSERT(!device);
+	WINRT_ASSERT(!m_d3dDevice);
 
 	return D3D11CreateDevice(
 		nullptr,
@@ -578,23 +563,21 @@ HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID
 		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
 		nullptr, 0,
 		D3D11_SDK_VERSION,
-		device.put(),
+		m_d3dDevice.put(),
 		nullptr,
 		nullptr);
 }
 
-com_ptr<ID3D11Device> DirectXTileRenderer::CreateDevice()
+void DirectXTileRenderer::CreateDevice()
 {
-	com_ptr<ID3D11Device> device;
-	HRESULT hr = CreateDevice(D3D_DRIVER_TYPE_HARDWARE, device);
+	HRESULT hr = CreateDevice(D3D_DRIVER_TYPE_HARDWARE);
 
 	if (DXGI_ERROR_UNSUPPORTED == hr)
 	{
-		hr = CreateDevice(D3D_DRIVER_TYPE_WARP, device);
+		hr = CreateDevice(D3D_DRIVER_TYPE_WARP);
 	}
 
 	check_hresult(hr);
-	return device;
 }
 
 CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeInt32 size)
@@ -632,15 +615,41 @@ CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
 	return surfaceBrush;
 }
 
-void DirectXTileRenderer::CreateImageDependentResources(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory)
+void DirectXTileRenderer::CreateDeviceIndependentResources()
+{
+
+	namespace abi = ABI::Windows::UI::Composition;
+
+	CreateFactory();
+	CreateDevice();
+	com_ptr<IDXGIDevice> const dxdevice = m_d3dDevice.as<IDXGIDevice>();
+
+	//TODO: move this out, so renderer is abstracted completely
+	m_compositor = WinComp::GetInstance()->m_compositor;
+
+	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
+	com_ptr<ID2D1Device> d2device;
+	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), d2device.put()));
+	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
+	check_hresult(
+		CoCreateInstance(
+			CLSID_WICImagingFactory2,
+			nullptr,
+			CLSCTX_INPROC_SERVER,
+			__uuidof(m_wicFactory),
+			m_wicFactory.put_void())
+	);
+}
+
+void DirectXTileRenderer::CreateImageDependentResources()
 {
 	// Create the Direct2D device object and a corresponding context.
 	com_ptr<IDXGIDevice3> dxgiDevice;
-	dxgiDevice = d3dDevice.as<IDXGIDevice3>();
+	dxgiDevice = m_d3dDevice.as<IDXGIDevice3>();
 
 	com_ptr<ID2D1Device>            d2dDeviceTemp;
 	check_hresult(
-		d2dFactory->CreateDevice(dxgiDevice.get(), d2dDeviceTemp.put())
+		m_d2dFactory->CreateDevice(dxgiDevice.get(), d2dDeviceTemp.put())
 	);
 	com_ptr<ID2D1Device5>            d2dDevice;
 	d2dDevice = d2dDeviceTemp.as<ID2D1Device5>();
@@ -652,21 +661,20 @@ void DirectXTileRenderer::CreateImageDependentResources(com_ptr<ID3D11Device> d3
 		)
 	);
 
+	// Load the image from WIC using ID2D1ImageSource.
+	check_hresult(
+		m_d2dContext->CreateImageSourceFromWic(
+			m_formatConvert.get(),
+			m_imageSource.put()
+		)
+	);
+
 	// White level scale is used to multiply the color values in the image; this allows the user
    // to adjust the brightness of the image on an HDR display.
 	check_hresult(m_d2dContext->CreateEffect(CLSID_D2D1ColorMatrix, m_whiteScaleEffect.put()));
 
 	// Input to white level scale may be modified in SetRenderOptions.
 	m_whiteScaleEffect->SetInputEffect(0, m_colorManagementEffect.get());
-
-	check_hresult(
-		CoCreateInstance(
-			CLSID_WICImagingFactory2,
-			nullptr,
-			CLSCTX_INPROC_SERVER,
-			__uuidof(m_wicFactory),
-			m_wicFactory.put_void())
-	);
 
 }
 
@@ -689,7 +697,7 @@ float DirectXTileRenderer::FitImageToWindow(Size panelSize)
 			(panelSize.Height - (m_imageInfo.size.Height * m_zoom)) / 2.0f
 		);
 
-		//UpdateImageTransformState();
+		UpdateImageTransformState();
 
 		// HDR metadata is supposed to be independent of any rendering options, but
 		// we can't compute it until the full effect graph is hooked up, which is here.

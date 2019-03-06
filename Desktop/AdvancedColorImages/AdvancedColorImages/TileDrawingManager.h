@@ -14,8 +14,8 @@ public:
 	~TileDrawingManager();
 	wstring UpdateVisibleRegion(float3 currentPosition);
 	void UpdateViewportSize(Size newSize);
-	void setRenderer(DirectXTileRenderer* renderer);
-	DirectXTileRenderer* getRenderer();
+	void setRenderer(DirectXTileRenderer renderer);
+	DirectXTileRenderer getRenderer();
 	void DrawTile(int row, int column);
 	const static int TILESIZE = 250;
 
@@ -32,7 +32,7 @@ private:
 	int horizontalVisibleTileCount;
 	int verticalVisibleTileCount;
 	float3 currentPosition;
-	DirectXTileRenderer* currentRenderer;
+	DirectXTileRenderer currentRenderer;
 	int DrawAheadTileCount;
 	Rect GetRectForTile(int row, int column);
 	Rect GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
