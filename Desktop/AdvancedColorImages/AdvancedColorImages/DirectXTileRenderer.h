@@ -90,7 +90,7 @@ private:
 	
 	// WIC and Direct2D resources.
 	com_ptr<ID3D11Device>					 m_d3dDevice;
-	com_ptr<ID2D1Device>					 m_d2device;
+	com_ptr<ID2D1Device>					 m_d2dDevice;
 	com_ptr<ID2D1Factory1>					 m_d2dFactory;
 	com_ptr<IWICFormatConverter>             m_formatConvert;
 	com_ptr<IWICColorContext>                m_wicColorContext;

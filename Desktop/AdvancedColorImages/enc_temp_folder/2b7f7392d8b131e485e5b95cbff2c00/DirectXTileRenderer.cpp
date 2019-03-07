@@ -646,8 +646,8 @@ void DirectXTileRenderer::CreateDeviceIndependentResources()
 
 	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
 	
-	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), m_d2dDevice.put()));
-	check_hresult(interopCompositor->CreateGraphicsDevice(m_d2dDevice.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
+	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), m_d2device.put()));
+	check_hresult(interopCompositor->CreateGraphicsDevice(m_d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 	check_hresult(
 		CoCreateInstance(
 			CLSID_WICImagingFactory2,
@@ -666,7 +666,7 @@ void DirectXTileRenderer::CreateImageDependentResources()
 
 	
 	com_ptr<ID2D1Device5>            d2dDevice;
-	d2dDevice = m_d2dDevice.as<ID2D1Device5>();
+	d2dDevice = m_d2device.as<ID2D1Device5>();
 
 	check_hresult(
 		d2dDevice->CreateDeviceContext(
