@@ -46,7 +46,7 @@ public:
 	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
-	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo);
+	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo, Size windowSize);
 	float FitImageToWindow(Size panelSize);
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
 	ImageInfo LoadImageFromWic(LPCWSTR szFileName);
@@ -69,8 +69,10 @@ private:
 	void UpdateWhiteLevelScale(float brightnessAdjustment, float sdrWhiteLevel);
 	ImageInfo LoadImageCommon(_In_ IWICBitmapSource* source);
 	void PopulateImageInfoACKind(_Inout_ ImageInfo* info);
+	void EmitHdrMetadata();
 	void Draw(Rect rect);
 	void UpdateImageColorContext();
+	void ComputeHdrMetadata();
 
 
 	//member variables
@@ -84,8 +86,6 @@ private:
 	Compositor								m_compositor = nullptr;
 	float									m_colorCounter = 0.0;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
-
-
 
 	
 	// WIC and Direct2D resources.
