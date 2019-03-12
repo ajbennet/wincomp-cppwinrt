@@ -11,10 +11,11 @@
 // THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
-
 #pragma once
 
-#include "stdafx.h"
+#include <string>
+#include <iostream>
+
 
 using namespace winrt;
 using namespace Windows::System;
@@ -32,13 +33,12 @@ class DirectXTileRenderer
 public:
 	DirectXTileRenderer();
 	~DirectXTileRenderer();
-	void Initialize();
+	void Initialize(Compositor compositor, int tileSize);
 	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
 
 private:
-	float random(int maxValue);
 	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
 		winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
 	void InitializeTextLayout();
@@ -49,16 +49,17 @@ private:
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	bool CheckForDeviceRemoved(HRESULT hr);
 
-
 	//member variables
-	winrt::com_ptr<::IDWriteFactory> m_dWriteFactory;
-	winrt::com_ptr<::IDWriteTextFormat> m_textFormat;
+	winrt::com_ptr<::IDWriteFactory>		m_dWriteFactory;
+	winrt::com_ptr<::IDWriteTextFormat>		m_textFormat;
+	com_ptr<ICompositionGraphicsDevice>		m_graphicsDevice = nullptr;
+	com_ptr<ICompositionGraphicsDevice2>	m_graphicsDevice2 = nullptr;
+	CompositionVirtualDrawingSurface		m_virtualSurfaceBrush = nullptr;
+	CompositionSurfaceBrush					m_surfaceBrush = nullptr;
+	Compositor								m_compositor = nullptr;
+	float									m_colorCounter = 0.0;
+	int										m_tileSize = 0;
 	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
-	com_ptr<ICompositionGraphicsDevice> m_graphicsDevice = nullptr;
-	com_ptr<ICompositionGraphicsDevice2>  m_graphicsDevice2 = nullptr;
-	CompositionVirtualDrawingSurface m_virtualSurfaceBrush = nullptr;
-	CompositionSurfaceBrush m_surfaceBrush = nullptr;
-	Compositor m_compositor = nullptr;
-	float m_colorCounter = 0.0;
+
 };
 

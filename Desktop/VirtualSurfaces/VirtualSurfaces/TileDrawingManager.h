@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "stdafx.h";
-#include "DirectXTileRenderer.h"
 #include <iostream>
 #include <ctime>
+#include "DirectXTileRenderer.h"
+
 
 using namespace std;
 using namespace winrt;
@@ -38,7 +38,7 @@ public:
 
 private:
 	
-	const int DRAWAHEAD = 0; //Number of tiles to draw ahead //Note: drawahead doesn't currently work
+	static const int DRAWAHEAD = 0; //Number of tiles to draw ahead 
 	int currentTopLeftTileRow = 0;
 	int currentTopLeftTileColumn = 0;
 	int drawnTopTileRow = 0;

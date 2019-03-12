@@ -15,7 +15,6 @@
 #include "stdafx.h"
 #include "WinComp.h"
 
-
 WinComp* WinComp::s_instance;
 
 WinComp::WinComp() 
@@ -71,7 +70,7 @@ void WinComp::Initialize(HWND hwnd)
 	Compositor compositor;
 	m_compositor = compositor;
 	DirectXTileRenderer* dxRenderer = new DirectXTileRenderer();
-	dxRenderer->Initialize();
+	dxRenderer->Initialize(m_compositor, TileDrawingManager::TILESIZE);
 	m_TileDrawingManager.setRenderer(dxRenderer);
 
 }
@@ -147,8 +146,8 @@ void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RE
 void WinComp::UpdateViewPort(RECT windowRect, boolean changeContentVisual)
 {
 	Size windowSize;
-	windowSize.Height = (windowRect.bottom - windowRect.top)/lastTrackerScale;
-	windowSize.Width = (windowRect.right - windowRect.left)/lastTrackerScale;
+	windowSize.Height = (windowRect.bottom - windowRect.top)/m_lastTrackerScale;
+	windowSize.Width = (windowRect.right - windowRect.left)/m_lastTrackerScale;
 
 	m_TileDrawingManager.UpdateViewportSize(windowSize);
 	if(changeContentVisual){
@@ -213,7 +212,7 @@ void WinComp::CustomAnimationStateEntered(InteractionTracker sender, Interaction
 
 void WinComp::IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args)
 {
-	if (zooming)
+	if (m_zooming)
 	{
 		RECT windowRect;
 		::GetWindowRect(m_window, &windowRect);
@@ -223,7 +222,7 @@ void WinComp::IdleStateEntered(InteractionTracker sender, InteractionTrackerIdle
 
 	}
 
-	zooming = false;
+	m_zooming = false;
 }
 
 void WinComp::InertiaStateEntered(InteractionTracker sender, InteractionTrackerInertiaStateEnteredArgs args)
@@ -245,18 +244,18 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 	{
 		wstring diags ;
 
-		if (lastTrackerScale == args.Scale())
+		if (m_lastTrackerScale == args.Scale())
 		{
-			diags = m_TileDrawingManager.UpdateVisibleRegion(sender.Position()/lastTrackerScale);
+			diags = m_TileDrawingManager.UpdateVisibleRegion(sender.Position()/m_lastTrackerScale);
 		}
 		else
 		{
 			// Don't run tilemanager during a zoom
 			// TODO need custom logic here eg for zoom out
-			zooming = true;
+			m_zooming = true;
 		}
 
-		lastTrackerScale = args.Scale();
+		m_lastTrackerScale = args.Scale();
 
 	}
 	catch (...)

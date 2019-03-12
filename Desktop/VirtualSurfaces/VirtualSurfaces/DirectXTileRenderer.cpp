@@ -11,45 +11,32 @@
 // THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
-
 #include "stdafx.h"
 #include "DirectXTileRenderer.h"
-#include "WinComp.h"
-#include <string>
-#include <iostream>
-
-using namespace Windows::UI::Composition;
-
-
 
 DirectXTileRenderer::DirectXTileRenderer()
 {
-
 }
-
 
 DirectXTileRenderer::~DirectXTileRenderer()
 {
 }
 
-void DirectXTileRenderer::Initialize() {
+void DirectXTileRenderer::Initialize(Compositor compositor, int tileSize) {
 	namespace abi = ABI::Windows::UI::Composition;
 
 	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
 	com_ptr<ID3D11Device> const& device = CreateDevice();
 	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
 
-	//TODO: move this out, so renderer is abstracted completely
-	m_compositor = WinComp::GetInstance()->m_compositor;
-
+	m_compositor = compositor;
+	m_tileSize = tileSize;
 	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
 	com_ptr<ID2D1Device> d2device;
 	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
 	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
-
 	InitializeTextLayout();
 }
-
 
 CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 {
@@ -138,11 +125,6 @@ void DirectXTileRenderer::Trim(Rect trimRect)
 	m_virtualSurfaceBrush.Trim(trimRects);
 }
 
-float DirectXTileRenderer::random(int maxValue) {
-
-	return rand() % maxValue;
-
-}
 
 // Renders the text into our composition surface
 void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
@@ -167,14 +149,13 @@ void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, D2D1_RECT_F rect
 	// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
 	// context; this has already been done for us by the composition API.
 	//position the text in the center as much as possible.
-	m_d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)rect.left + (TileDrawingManager::TILESIZE / 2 - 30), (float)rect.top+(TileDrawingManager::TILESIZE/2-30)), textLayout.get(),
+	m_d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)rect.left + (m_tileSize / 2 - 30), (float)rect.top+(m_tileSize/2-30)), textLayout.get(),
 		m_textBrush.get());
 
 }
 
 void DirectXTileRenderer::InitializeTextLayout()
 {
-	
 	winrt::check_hresult(
 		::DWriteCreateFactory(
 			DWRITE_FACTORY_TYPE_SHARED,
@@ -258,8 +239,8 @@ CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
 	namespace abi = ABI::Windows::UI::Composition;
 
 	SizeInt32 size;
-	size.Width = WinComp::TILESIZE * 10000;
-	size.Height = WinComp::TILESIZE * 10000;
+	size.Width = m_tileSize * 10000;
+	size.Height = m_tileSize * 10000;
 
 	m_surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
 

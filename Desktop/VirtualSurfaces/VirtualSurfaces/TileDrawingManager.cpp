@@ -11,14 +11,13 @@
 // THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
+#include "stdafx.h"
 #include "TileDrawingManager.h"
 
 
 TileDrawingManager::TileDrawingManager()
 {
-
 }
-
 
 TileDrawingManager::~TileDrawingManager()
 {
