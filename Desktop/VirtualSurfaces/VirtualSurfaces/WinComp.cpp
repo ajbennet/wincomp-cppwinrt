@@ -251,16 +251,14 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 {
 	try
 	{
-		wstring diags ;
-
+		
 		if (m_lastTrackerScale == args.Scale())
 		{
-			diags = m_TileDrawingManager.UpdateVisibleRegion(sender.Position()/m_lastTrackerScale);
+			m_TileDrawingManager.UpdateVisibleRegion(sender.Position()/m_lastTrackerScale);
 		}
 		else
 		{
 			// Don't run tilemanager during a zoom
-			// TODO need custom logic here eg for zoom out
 			m_zooming = true;
 		}
 

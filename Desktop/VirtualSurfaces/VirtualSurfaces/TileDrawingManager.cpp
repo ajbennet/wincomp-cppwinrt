@@ -50,6 +50,9 @@ void TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 		{
 			DrawTile(row, column);
 			stateUpdate = true;
+			char msgbuf[1000];
+			sprintf_s(msgbuf, "UpdateVisibleRegion - Draw tile -  %d, %d, %d, %d \n", requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
+			OutputDebugStringA(msgbuf);
 		}
 	}
 
@@ -98,9 +101,11 @@ void TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 	if (stateUpdate)
 	{
 		Trim(requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
+		char msgbuf[1000];
+		sprintf_s(msgbuf, "Trimming contentes outside of  %d, %d, %d, %d \n", requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
+		OutputDebugStringA(msgbuf);
 	}
 
-	
 }
 
 void TileDrawingManager::UpdateViewportSize(Size newSize)
@@ -114,7 +119,8 @@ void TileDrawingManager::UpdateViewportSize(Size newSize)
 	memset(msgbuf, 0, 1000);
 	sprintf_s(msgbuf, "VisibleTileCount Horizonal : %d, Vertical : %d \n", horizontalVisibleTileCount, verticalVisibleTileCount);
 	OutputDebugStringA(msgbuf);
-	DrawVisibleTiles();
+	DrawVisibleTilesbyRange();
+	//DrawVisibleTiles();
 }
 
 Rect TileDrawingManager::GetRectForTile(int row, int column)
@@ -125,11 +131,32 @@ Rect TileDrawingManager::GetRectForTile(int row, int column)
 	//TODO: refactor above to use below
 }
 
+Tile TileDrawingManager::GetTileForCoordinates(int row, int column)
+{
+	int x = column * TILESIZE;
+	int y = row * TILESIZE;
+	Rect rect(x, y, TILESIZE, TILESIZE);
+	return Tile{ rect,row,column };
+}
+
 Rect TileDrawingManager::GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
 {
 	int x = tileStartColumn * TILESIZE;
 	int y = tileStartRow * TILESIZE;
 	return Rect(x, y, numColumns * TILESIZE, numRows * TILESIZE);
+}
+
+list<Tile> TileDrawingManager::GetTilesForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
+{
+	list<Tile> returnTiles;
+	//get Tile objects for each tile that needs to be rendered.
+	for (int i = tileStartColumn; i < tileStartColumn + numColumns; i++) {
+		for (int j = tileStartRow; j < tileStartRow + numRows; j++) {
+
+			returnTiles.push_back(GetTileForCoordinates(j, i));
+		}
+	}
+	return returnTiles;
 }
 
 void TileDrawingManager::DrawVisibleTiles()
@@ -138,7 +165,7 @@ void TileDrawingManager::DrawVisibleTiles()
 	//TODO: drawahead applied to left as well
 	const clock_t begin_time = std::clock();
 	
-	for (int row = 0; row < horizontalVisibleTileCount + DrawAheadTileCount; row++)
+	for (int row = 0; row < verticalVisibleTileCount + DrawAheadTileCount; row++)
 	{
 		for (int column = 0; column <horizontalVisibleTileCount + DrawAheadTileCount; column++)
 		{
@@ -149,13 +176,32 @@ void TileDrawingManager::DrawVisibleTiles()
 //	currentRenderer->EndDrawingSession();
 	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
 	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;
-	// do something
-
+	
 	char msgbuf[1000];
 	sprintf_s(msgbuf, "Time Taken %f \n", float(std::clock() - begin_time) / CLOCKS_PER_SEC);
 	OutputDebugStringA(msgbuf);
 
 }
+
+void TileDrawingManager::DrawVisibleTilesbyRange()
+{
+	//currentRenderer->StartDrawingSession();
+	const clock_t begin_time = std::clock();
+
+	
+	currentRenderer->DrawTileRange(GetRectForTileRange(0,0, horizontalVisibleTileCount + DrawAheadTileCount, verticalVisibleTileCount + DrawAheadTileCount),
+				GetTilesForRange(0, 0, horizontalVisibleTileCount + DrawAheadTileCount, verticalVisibleTileCount + DrawAheadTileCount));
+
+	//	currentRenderer->EndDrawingSession();
+	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
+	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;
+
+	char msgbuf[1000];
+	sprintf_s(msgbuf, "Time Taken by draw range %f \n", float(std::clock() - begin_time) / CLOCKS_PER_SEC);
+	OutputDebugStringA(msgbuf);
+
+}
+
 
 void TileDrawingManager::DrawTile(int row, int column)
 {

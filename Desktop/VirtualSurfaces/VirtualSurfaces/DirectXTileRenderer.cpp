@@ -94,6 +94,71 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 
 }
 
+void DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> tiles)
+{
+	POINT offset;
+	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width - 5),  static_cast<LONG>(rect.Y + rect.Height - 5) };
+	// Begin our update of the surface pixels. If this is our first update, we are required
+	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+	// any time we make an update we touch the entire surface, so we always pass nullptr).
+	winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
+	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
+	std::list<Tile>::iterator it;
+	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset))) {
+		
+		m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+
+		//get the offset difference that can be applied to every tile before drawing.
+		Tile firstTile= tiles.front();
+		POINT differenceOffset{ offset.x - firstTile.rect.X, offset.y - firstTile.rect.Y };
+
+		for (it = tiles.begin(); it != tiles.end(); ++it) {
+			DrawTile(m_d2dDeviceContext, m_textBrush, *it, differenceOffset);
+		}
+
+		m_surfaceInterop->EndDraw();
+	}
+
+}
+
+void DirectXTileRenderer::DrawTile(com_ptr<::ID2D1DeviceContext> d2dDeviceContext, com_ptr<::ID2D1SolidColorBrush> m_textBrush, Tile tile, POINT differenceOffset )
+{
+
+	// Create a solid color brush for the text. A more sophisticated application might want
+	// to cache and reuse a brush across all text elements instead, taking care to recreate
+	// it in the event of device removed.
+	winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+		D2D1::ColorF(D2D1::ColorF::DimGray, 1.0f), m_textBrush.put()));
+
+	//Generating colors to distinguish each tile.
+	m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
+	D2D1::ColorF randomColor(m_colorCounter / 256, 1.0f, 0.0f, 0.5f);
+
+	float offsetUpdatedX = tile.rect.X + differenceOffset.x;
+	float offsetUpdatedY = tile.rect.Y + differenceOffset.y;
+	int borderMargin = 5;
+
+	D2D1_RECT_F tileRectangle{ offsetUpdatedX ,  offsetUpdatedY, offsetUpdatedX+tile.rect.Width-borderMargin, offsetUpdatedY + tile.rect.Height-borderMargin };
+
+	winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
+	//Draw the rectangle
+	winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+		randomColor, tilebrush.put()));
+
+	d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
+	/*char msgbuf[1000];
+	sprintf_s(msgbuf, "Rect %f,%f,%f,%f \n", tileRectangle.left, tileRectangle.top, tileRectangle.right, tileRectangle.bottom);
+	OutputDebugStringA(msgbuf);
+	memset(msgbuf, 0, 1000);
+	sprintf_s(msgbuf, "Tile coordinates : %d,%d \n", tileRow, tileColumn);
+	OutputDebugStringA(msgbuf);
+	memset(msgbuf, 0, 1000);
+	sprintf_s(msgbuf, "Offset %ld,%ld\n", offset.x, offset.y);
+	OutputDebugStringA(msgbuf);
+	*/
+	DrawText(tile.row, tile.column, tileRectangle, d2dDeviceContext, m_textBrush);
+}
+
 
 // We may detect device loss on BeginDraw calls. This helper handles this condition or other
 // errors.

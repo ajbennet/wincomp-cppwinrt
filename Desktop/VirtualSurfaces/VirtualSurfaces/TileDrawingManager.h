@@ -34,7 +34,7 @@ public:
 	void setRenderer(DirectXTileRenderer* renderer);
 	DirectXTileRenderer* getRenderer();
 	void DrawTile(int row, int column);
-	const static int TILESIZE = 250;
+	const static int TILESIZE = 500;
 
 private:
 	
@@ -51,10 +51,14 @@ private:
 	float3 currentPosition;
 	DirectXTileRenderer* currentRenderer;
 	int DrawAheadTileCount;
+	
+	
 	Rect GetRectForTile(int row, int column);
+	Tile GetTileForCoordinates(int row, int column);
+	list<Tile> GetTilesForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
+	void DrawVisibleTilesbyRange();
 	Rect GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
 	void DrawVisibleTiles();
 	void Trim(int leftColumn, int topRow, int rightColumn, int bottomRow);
 
 };
-
