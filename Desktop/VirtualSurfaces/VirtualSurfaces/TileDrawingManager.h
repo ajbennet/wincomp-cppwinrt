@@ -30,11 +30,12 @@ public:
 	TileDrawingManager();
 	~TileDrawingManager();
 	void UpdateVisibleRegion(float3 currentPosition);
+	void UpdateVisibleRegionByRange(float3 currentPosition);
 	void UpdateViewportSize(Size newSize);
 	void setRenderer(DirectXTileRenderer* renderer);
 	DirectXTileRenderer* getRenderer();
 	void DrawTile(int row, int column);
-	const static int TILESIZE = 500;
+	const static int TILESIZE = 250;
 
 private:
 	

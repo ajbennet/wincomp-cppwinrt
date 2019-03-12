@@ -45,7 +45,7 @@ public:
 	void DrawTile(com_ptr<::ID2D1DeviceContext> d2dDeviceContext,com_ptr<::ID2D1SolidColorBrush> m_textBrush, Tile tile, POINT offset);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
-	void DrawTileRange(Rect rect, std::list<Tile> tiles);
+	bool DrawTileRange(Rect rect, std::list<Tile> tiles);
 
 private:
 	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,

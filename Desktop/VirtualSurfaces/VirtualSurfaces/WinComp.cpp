@@ -155,7 +155,7 @@ void WinComp::UpdateViewPort(boolean changeContentVisual)
 			m_contentVisual.Size(windowSize);
 		}
 		m_TileDrawingManager.UpdateViewportSize(windowSize);
-		m_TileDrawingManager.UpdateVisibleRegion(m_lastTrackerPosition / m_lastTrackerScale);
+		m_TileDrawingManager.UpdateVisibleRegionByRange(m_lastTrackerPosition / m_lastTrackerScale);
 	}
 }
 
@@ -208,11 +208,12 @@ void WinComp::ConfigureInteraction()
 	m_scaleSurfaceUpDownExpressionAnimation.SetReferenceParameter(L"tracker", m_tracker);
 	
 	m_tracker.MinPosition(float3(0, 0, 0));
-	//TODO: use same consts as tilemanager object
 	m_tracker.MaxPosition(float3(TileDrawingManager::TILESIZE * 10000, TileDrawingManager::TILESIZE * 10000, 0));
 
-	m_tracker.MinScale(0.1f);
-	m_tracker.MaxScale(10.0f);
+	//TODO: VirtualSurface.BeginDraw fails when we try to draw to a very large surface inside one BeginDraw call. 
+	//Need more complex logic there to handle it well.
+	m_tracker.MinScale(0.2f);
+	m_tracker.MaxScale(3.0f);
 	
 	StartAnimation(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 }
@@ -254,7 +255,7 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 		
 		if (m_lastTrackerScale == args.Scale())
 		{
-			m_TileDrawingManager.UpdateVisibleRegion(sender.Position()/m_lastTrackerScale);
+			m_TileDrawingManager.UpdateVisibleRegionByRange(sender.Position()/m_lastTrackerScale);
 		}
 		else
 		{

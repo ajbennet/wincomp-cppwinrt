@@ -94,7 +94,7 @@ void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
 
 }
 
-void DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> tiles)
+bool DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> tiles)
 {
 	POINT offset;
 	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width - 5),  static_cast<LONG>(rect.Y + rect.Height - 5) };
@@ -117,8 +117,9 @@ void DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> tiles)
 		}
 
 		m_surfaceInterop->EndDraw();
+		return true;
 	}
-
+	return false;
 }
 
 void DirectXTileRenderer::DrawTile(com_ptr<::ID2D1DeviceContext> d2dDeviceContext, com_ptr<::ID2D1SolidColorBrush> m_textBrush, Tile tile, POINT differenceOffset )
@@ -175,11 +176,9 @@ bool DirectXTileRenderer::CheckForDeviceRemoved(HRESULT hr)
 		// now. We will be asked to draw again once the Direct3D device is recreated
 		return false;
 	}
-	else
-	{
-		// Any other error is unexpected and, therefore, fatal
-		//TODO:: FailFast();
-	}
+	// Any other error is unexpected and, therefore, fatal.
+	winrt::check_hresult(hr);
+	return true;
 }
 
 void DirectXTileRenderer::Trim(Rect trimRect)
