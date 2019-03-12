@@ -89,18 +89,15 @@ void WinComp::PrepareVisuals()
 {
 	m_target = CreateDesktopWindowTarget(m_compositor, m_window);
 	
-	RECT windowRect;
-	::GetWindowRect(m_window, &windowRect);
-
 	auto root = m_compositor.CreateSpriteVisual();
 	//Create a background with Gray color brush.
 	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xFE, 0xFE , 0xFE }));
 
-	root.Size({ 0.0f+windowRect.right-windowRect.left, 0.0f + windowRect.bottom-windowRect.top});
+	root.Size(getWindowSize());
 	m_target.Root(root);
 	
 	auto visuals = root.Children();
-	AddD2DVisual(visuals, 0.0f, 0.0f, windowRect);
+	AddD2DVisual(visuals, 0.0f, 0.0f);
 }
 
 void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
@@ -131,28 +128,44 @@ void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
 	visuals.InsertAtTop(visual);
 }
 
-void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect)
+void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
 {
 	auto compositor = visuals.Compositor();
 	m_contentVisual = compositor.CreateSpriteVisual();
 	m_contentVisual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 
-	m_contentVisual.Size({(float)windowRect.right-windowRect.left, (float)windowRect.bottom-windowRect.top});
+	m_contentVisual.Size(getWindowSize());
 	m_contentVisual.Offset({ x, y, 0.0f, });
 
 	visuals.InsertAtTop(m_contentVisual);
 }
 
-void WinComp::UpdateViewPort(RECT windowRect, boolean changeContentVisual)
+void WinComp::UpdateViewPort(boolean changeContentVisual)
 {
-	Size windowSize;
-	windowSize.Height = (windowRect.bottom - windowRect.top)/m_lastTrackerScale;
-	windowSize.Width = (windowRect.right - windowRect.left)/m_lastTrackerScale;
+	//return if the m_window hasn't been set.
+	if(m_window!=nullptr){
+		RECT windowRect;
+		::GetWindowRect(m_window, &windowRect);
+		Size windowSize ;
+		windowSize.Height = (windowRect.bottom - windowRect.top)/m_lastTrackerScale;
+		windowSize.Width = (windowRect.right - windowRect.left)/m_lastTrackerScale;
 
-	m_TileDrawingManager.UpdateViewportSize(windowSize);
-	if(changeContentVisual){
-		m_contentVisual.Size(windowSize);
+		
+		if(changeContentVisual){
+			m_contentVisual.Size(windowSize);
+		}
+		m_TileDrawingManager.UpdateViewportSize(windowSize);
+		m_TileDrawingManager.UpdateVisibleRegion(m_lastTrackerPosition / m_lastTrackerScale);
 	}
+}
+
+Size WinComp::getWindowSize()
+{
+	RECT windowRect;
+	::GetWindowRect(m_window, &windowRect);
+
+	return Size({ 0.0f + windowRect.right - windowRect.left, 0.0f + windowRect.bottom - windowRect.top });
+
 }
 
 void WinComp::StartAnimation(CompositionSurfaceBrush brush)
@@ -214,12 +227,8 @@ void WinComp::IdleStateEntered(InteractionTracker sender, InteractionTrackerIdle
 {
 	if (m_zooming)
 	{
-		RECT windowRect;
-		::GetWindowRect(m_window, &windowRect);
-
 		//dont update the content visual, because the window size hasnt changed.
-		UpdateViewPort(windowRect, false);
-
+		UpdateViewPort( false);
 	}
 
 	m_zooming = false;
@@ -256,7 +265,7 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 		}
 
 		m_lastTrackerScale = args.Scale();
-
+		m_lastTrackerPosition = sender.Position();
 	}
 	catch (...)
 	{

@@ -31,7 +31,7 @@ DirectXTileRenderer* TileDrawingManager::getRenderer()
 	return currentRenderer;
 }
 
-wstring TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
+void TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 {
 	currentPosition = currentPosition;
 	bool stateUpdate = false;
@@ -100,7 +100,7 @@ wstring TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 		Trim(requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
 	}
 
-	return L"Left tile:{currentTopLeftTileColumn} Top tile:{currentTopLeftTileRow}";
+	
 }
 
 void TileDrawingManager::UpdateViewportSize(Size newSize)
@@ -108,7 +108,12 @@ void TileDrawingManager::UpdateViewportSize(Size newSize)
 	viewPortSize = newSize;
 	horizontalVisibleTileCount = (int)ceil(newSize.Width / TILESIZE);
 	verticalVisibleTileCount = (int)ceil(newSize.Height / TILESIZE);
-
+	char msgbuf[1000];
+	sprintf_s(msgbuf, "ViewPortSize updated to %f,%f \n", newSize.Height, newSize.Width);
+	OutputDebugStringA(msgbuf);
+	memset(msgbuf, 0, 1000);
+	sprintf_s(msgbuf, "VisibleTileCount Horizonal : %d, Vertical : %d \n", horizontalVisibleTileCount, verticalVisibleTileCount);
+	OutputDebugStringA(msgbuf);
 	DrawVisibleTiles();
 }
 

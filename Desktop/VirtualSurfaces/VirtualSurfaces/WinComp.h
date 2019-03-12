@@ -50,7 +50,7 @@ public:
 	void Initialize(HWND hwnd);
 	void PrepareVisuals();
 	DispatcherQueueController EnsureDispatcherQueue();
-	void UpdateViewPort(RECT windowRect, boolean changeContentVisual);
+	void UpdateViewPort(boolean changeContentVisual);
 	void ConfigureInteraction();
 	void TryRedirectForManipulation(PointerPoint pp);
 	void TryUpdatePositionBy(float3 const& amount);
@@ -67,9 +67,10 @@ public:
 private:
 
 	DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window);
-	void AddD2DVisual(VisualCollection const& visuals, float x, float y, RECT windowRect);
+	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
 	void AddVisual(VisualCollection const& visuals, float x, float y);
 	void StartAnimation(CompositionSurfaceBrush brush);
+	Size getWindowSize();
 
 	//member variables
 	Compositor					m_compositor{ nullptr };
@@ -89,6 +90,7 @@ private:
 
 	TileDrawingManager			m_TileDrawingManager;
 	float						m_lastTrackerScale = 1.0f;
+	float3						m_lastTrackerPosition{ 0.0f,0.0f,0.0f };
 	bool						m_zooming;
 
 };

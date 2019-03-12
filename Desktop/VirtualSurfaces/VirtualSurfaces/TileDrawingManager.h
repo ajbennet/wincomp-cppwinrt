@@ -29,7 +29,7 @@ class TileDrawingManager
 public:
 	TileDrawingManager();
 	~TileDrawingManager();
-	wstring UpdateVisibleRegion(float3 currentPosition);
+	void UpdateVisibleRegion(float3 currentPosition);
 	void UpdateViewportSize(Size newSize);
 	void setRenderer(DirectXTileRenderer* renderer);
 	DirectXTileRenderer* getRenderer();
