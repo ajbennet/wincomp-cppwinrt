@@ -29,40 +29,11 @@ DirectXTileRenderer::~DirectXTileRenderer()
 }
 
 void DirectXTileRenderer::Initialize() {
-	namespace abi = ABI::Windows::UI::Composition;
-
-	com_ptr<ID2D1Factory1> const& factory = CreateFactory();
-	com_ptr<ID3D11Device> const& device = CreateDevice();
-	com_ptr<IDXGIDevice> const dxdevice = device.as<IDXGIDevice>();
-	CreateImageDependentResources(device, factory);
-
-	//TODO: move this out, so renderer is abstracted completely
-	m_compositor = WinComp::GetInstance()->m_compositor;
-
-	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
-	com_ptr<ID2D1Device> d2device;
-	check_hresult(factory->CreateDevice(dxdevice.get(), d2device.put()));
-	check_hresult(interopCompositor->CreateGraphicsDevice(d2device.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
-
-	UpdateImageTransformState();
+	
+	CreateDeviceIndependentResources();
 	InitializeTextLayout();
 }
-//
-//void DirectXTileRenderer::LoadImage(_In_ StorageFile const& imageFile)
-//{
-//	create_task(imageFile.OpenAsync(FileAccessMode::Read)
-//	).then([=](IRandomAccessStream const& ras) {
-//		// If file opening fails, fall through to error handler at the end of task chain.
-//
-//		com_ptr<IStream> iStream;
-//		check_hresult(
-//			CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void())
-//		);
-//
-//		return LoadImageFromWic(iStream.get());
-//		});
-//}
-//
+
 
 CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 {
@@ -78,7 +49,8 @@ CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 void DirectXTileRenderer::SetRenderOptions(
 	RenderEffectKind effect,
 	float brightnessAdjustment,
-	AdvancedColorInfo const& acInfo
+	AdvancedColorInfo const& acInfo,
+	Size windowSize
 )
 {
 	m_dispInfo = acInfo;
@@ -103,7 +75,7 @@ void DirectXTileRenderer::SetRenderOptions(
 
 	}
 
-	Draw(Rect(0, 0, 800, 800));
+	Draw(Rect(0, 0, windowSize.Width, windowSize.Height));
 }
 
 // When connected to an HDR display, the OS renders SDR content (e.g. 8888 UNORM) at
@@ -328,8 +300,6 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 }
 
 
-
-
 // Simplified heuristic to determine what advanced color kind the image is.
 // Requires that all fields other than imageKind are populated.
 void DirectXTileRenderer::PopulateImageInfoACKind(_Inout_ ImageInfo* info)
@@ -374,11 +344,28 @@ void DirectXTileRenderer::Draw(Rect rect)
 		
 		if (m_scaledImage)
 		{
-			d2dDeviceContext->DrawImage(m_finalOutput.get(), m_imageOffset);
+			
 
+			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+
+			D2D_POINT_2F d2dOffset{offset.x, offset.y};
+
+			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
+			
+			//Generating colors to distinguish each tile.
+			//m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
+			//D2D1::ColorF randomColor(m_colorCounter / 256, 1.0f, 0.0f, 0.5f);
+			//D2D1_RECT_F tileRectangle{ offset.x , offset.y , offset.x + rect.Width, offset.y + rect.Height };
+
+			//winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
+			////Draw the rectangle
+			//winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
+			//	randomColor, tilebrush.put()));
+
+			//d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
 			//EmitHdrMetadata();
 		}
-
+		check_hresult(d2dDeviceContext->Flush());
 		m_surfaceInterop->EndDraw();
 	}
 
@@ -554,7 +541,7 @@ void DirectXTileRenderer::InitializeTextLayout()
 
 }
 
-com_ptr<ID2D1Factory1> DirectXTileRenderer::CreateFactory()
+void DirectXTileRenderer::CreateFactory()
 {
 	D2D1_FACTORY_OPTIONS options{};
 	com_ptr<ID2D1Factory1> factory;
@@ -562,14 +549,13 @@ com_ptr<ID2D1Factory1> DirectXTileRenderer::CreateFactory()
 	check_hresult(D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
 		options,
-		factory.put()));
+		m_d2dFactory.put()));
 
-	return factory;
 }
 
-HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device)
+HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type)
 {
-	WINRT_ASSERT(!device);
+	WINRT_ASSERT(!m_d3dDevice);
 
 	return D3D11CreateDevice(
 		nullptr,
@@ -578,23 +564,21 @@ HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID
 		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
 		nullptr, 0,
 		D3D11_SDK_VERSION,
-		device.put(),
+		m_d3dDevice.put(),
 		nullptr,
 		nullptr);
 }
 
-com_ptr<ID3D11Device> DirectXTileRenderer::CreateDevice()
+void DirectXTileRenderer::CreateDevice()
 {
-	com_ptr<ID3D11Device> device;
-	HRESULT hr = CreateDevice(D3D_DRIVER_TYPE_HARDWARE, device);
+	HRESULT hr = CreateDevice(D3D_DRIVER_TYPE_HARDWARE);
 
 	if (DXGI_ERROR_UNSUPPORTED == hr)
 	{
-		hr = CreateDevice(D3D_DRIVER_TYPE_WARP, device);
+		hr = CreateDevice(D3D_DRIVER_TYPE_WARP);
 	}
 
 	check_hresult(hr);
-	return device;
 }
 
 CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeInt32 size)
@@ -632,33 +616,22 @@ CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
 	return surfaceBrush;
 }
 
-void DirectXTileRenderer::CreateImageDependentResources(com_ptr<ID3D11Device> d3dDevice, com_ptr<ID2D1Factory1> d2dFactory)
+void DirectXTileRenderer::CreateDeviceIndependentResources()
 {
-	// Create the Direct2D device object and a corresponding context.
-	com_ptr<IDXGIDevice3> dxgiDevice;
-	dxgiDevice = d3dDevice.as<IDXGIDevice3>();
 
-	com_ptr<ID2D1Device>            d2dDeviceTemp;
-	check_hresult(
-		d2dFactory->CreateDevice(dxgiDevice.get(), d2dDeviceTemp.put())
-	);
-	com_ptr<ID2D1Device5>            d2dDevice;
-	d2dDevice = d2dDeviceTemp.as<ID2D1Device5>();
+	namespace abi = ABI::Windows::UI::Composition;
 
-	check_hresult(
-		d2dDevice->CreateDeviceContext(
-			D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-			m_d2dContext.put()
-		)
-	);
+	CreateFactory();
+	CreateDevice();
+	com_ptr<IDXGIDevice> const dxdevice = m_d3dDevice.as<IDXGIDevice>();
 
-	// White level scale is used to multiply the color values in the image; this allows the user
-   // to adjust the brightness of the image on an HDR display.
-	check_hresult(m_d2dContext->CreateEffect(CLSID_D2D1ColorMatrix, m_whiteScaleEffect.put()));
+	//TODO: move this out, so renderer is abstracted completely
+	m_compositor = WinComp::GetInstance()->m_compositor;
 
-	// Input to white level scale may be modified in SetRenderOptions.
-	m_whiteScaleEffect->SetInputEffect(0, m_colorManagementEffect.get());
-
+	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
+	
+	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), m_d2dDevice.put()));
+	check_hresult(interopCompositor->CreateGraphicsDevice(m_d2dDevice.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
 	check_hresult(
 		CoCreateInstance(
 			CLSID_WICImagingFactory2,
@@ -667,8 +640,226 @@ void DirectXTileRenderer::CreateImageDependentResources(com_ptr<ID3D11Device> d3
 			__uuidof(m_wicFactory),
 			m_wicFactory.put_void())
 	);
+}
+
+// Set HDR10 metadata to allow HDR displays to optimize behavior based on our content.
+void DirectXTileRenderer::EmitHdrMetadata()
+{
+	//auto acKind = m_dispInfo ? m_dispInfo.CurrentAdvancedColorKind : AdvancedColorKind::StandardDynamicRange;
+	//TODO: hardcoded to HDR for now. Need to fix this later.
+	//if (acKind == AdvancedColorKind::HighDynamicRange)
+	{
+		DXGI_HDR_METADATA_HDR10 metadata = {};
+
+		// This sample doesn't do any chrominance (e.g. xy) gamut mapping, so just use default
+		// color primaries values; a more sophisticated app will explicitly set these.
+		// DXGI_HDR_METADATA_HDR10 defines primaries as 1/50000 of a unit in xy space.
+		metadata.RedPrimary[0] = static_cast<UINT16>(m_dispInfo.RedPrimary.X   * 50000.0f);
+		metadata.RedPrimary[1] = static_cast<UINT16>(m_dispInfo.RedPrimary.Y   * 50000.0f);
+		metadata.GreenPrimary[0] = static_cast<UINT16>(m_dispInfo.GreenPrimary.X * 50000.0f);
+		metadata.GreenPrimary[1] = static_cast<UINT16>(m_dispInfo.GreenPrimary.Y * 50000.0f);
+		metadata.BluePrimary[0] = static_cast<UINT16>(m_dispInfo.BluePrimary.X  * 50000.0f);
+		metadata.BluePrimary[1] = static_cast<UINT16>(m_dispInfo.BluePrimary.Y  * 50000.0f);
+		metadata.WhitePoint[0] = static_cast<UINT16>(m_dispInfo.WhitePoint.X   * 50000.0f);
+		metadata.WhitePoint[1] = static_cast<UINT16>(m_dispInfo.WhitePoint.Y   * 50000.0f);
+
+		float effectiveMaxCLL = 0;
+
+		switch (m_renderEffectKind)
+		{
+			// Currently only the "None" render effect results in pixel values that exceed
+			// the OS-specified SDR white level, as it just passes through HDR color values.
+		case RenderEffectKind::None:
+			effectiveMaxCLL = max(m_maxCLL, 0.0f) * m_brightnessAdjust;
+			break;
+
+		default:
+			effectiveMaxCLL = m_dispInfo.SdrWhiteLevelInNits() * m_brightnessAdjust;
+			break;
+		}
+
+		// DXGI_HDR_METADATA_HDR10 defines MaxCLL in integer nits.
+		metadata.MaxContentLightLevel = static_cast<UINT16>(effectiveMaxCLL);
+
+		// The luminance analysis doesn't calculate MaxFrameAverageLightLevel. We also don't have mastering
+		// information (i.e. reference display in a studio), so Min/MaxMasteringLuminance is not relevant.
+		// Leave these values as 0.
+
+		//TODO set 
+		/*auto sc = m_deviceResources->GetSwapChain();
+
+		ComPtr<IDXGISwapChain4> sc4;
+		DX::ThrowIfFailed(sc->QueryInterface(IID_PPV_ARGS(&sc4)));
+		DX::ThrowIfFailed(sc4->SetHDRMetaData(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(metadata), &metadata));*/
+	}
+}
+
+
+
+void DirectXTileRenderer::CreateImageDependentResources()
+{
+	// Create the Direct2D device object and a corresponding context.
+	com_ptr<IDXGIDevice3> dxgiDevice;
+	dxgiDevice = m_d3dDevice.as<IDXGIDevice3>();
+
+	
+	com_ptr<ID2D1Device5>            d2dDevice;
+	d2dDevice = m_d2dDevice.as<ID2D1Device5>();
+
+	check_hresult(
+		d2dDevice->CreateDeviceContext(
+			D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
+			m_d2dContext.put()
+		)
+	);
+
+	// Load the image from WIC using ID2D1ImageSource.
+	check_hresult(
+		m_d2dContext->CreateImageSourceFromWic(
+			m_formatConvert.get(),
+			m_imageSource.put()
+		)
+	);
+
+	check_hresult(
+		m_d2dContext->CreateEffect(CLSID_D2D1ColorManagement, m_colorManagementEffect.put())
+	);
+
+	check_hresult(
+		m_colorManagementEffect->SetValue(
+			D2D1_COLORMANAGEMENT_PROP_QUALITY,
+			D2D1_COLORMANAGEMENT_QUALITY_BEST   // Required for floating point and DXGI color space support.
+		)
+	);
+
+
+	UpdateImageColorContext();
+
+	// The destination color space is the render target's (swap chain's) color space. This app uses an
+	// FP16 swap chain, which requires the colorspace to be scRGB.
+	com_ptr<ID2D1ColorContext1> destColorContext;
+	check_hresult(
+		m_d2dContext->CreateColorContextFromDxgiColorSpace(
+			DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, // scRGB
+			destColorContext.put()
+		)
+	);
+
+	check_hresult(
+		m_colorManagementEffect->SetValue(
+			D2D1_COLORMANAGEMENT_PROP_DESTINATION_COLOR_CONTEXT,
+			destColorContext.get()
+		)
+	);
+
+
+	// White level scale is used to multiply the color values in the image; this allows the user
+   // to adjust the brightness of the image on an HDR display.
+	check_hresult(m_d2dContext->CreateEffect(CLSID_D2D1ColorMatrix, m_whiteScaleEffect.put()));
+
+	// Input to white level scale may be modified in SetRenderOptions.
+	m_whiteScaleEffect->SetInputEffect(0, m_colorManagementEffect.get());
+
 
 }
+
+// Derive the source color context from the image (embedded ICC profile or metadata).
+void DirectXTileRenderer::UpdateImageColorContext()
+{
+	com_ptr<ID2D1ColorContext> sourceColorContext;
+
+	// For most image types, automatically derive the color context from the image.
+	if (m_imageInfo.numProfiles >= 1)
+	{
+		check_hresult(
+			m_d2dContext->CreateColorContextFromWicColorContext(
+				m_wicColorContext.get(),
+				sourceColorContext.put()
+			)
+		);
+	}
+	else
+	{
+		// Since no embedded color profile/metadata exists, select a default
+		// based on the pixel format: floating point == scRGB, others == sRGB.
+		check_hresult(
+			m_d2dContext->CreateColorContext(
+				m_imageInfo.isFloat ? D2D1_COLOR_SPACE_SCRGB : D2D1_COLOR_SPACE_SRGB,
+				nullptr,
+				0,
+				sourceColorContext.put()
+			)
+		);
+	}
+
+	check_hresult(
+		m_colorManagementEffect->SetValue(
+			D2D1_COLORMANAGEMENT_PROP_SOURCE_COLOR_CONTEXT,
+			sourceColorContext.get()
+		)
+	);
+}
+
+// Uses a histogram to compute a modified version of MaxCLL (ST.2086 max content light level).
+// Performs Begin/EndDraw on the D2D context.
+void DirectXTileRenderer::ComputeHdrMetadata()
+{
+	// Initialize with a sentinel value.
+	m_maxCLL = -1.0f;
+
+	// MaxCLL is not meaningful for SDR or WCG images.
+	if ((!m_isComputeSupported) ||
+		(m_imageInfo.imageKind != AdvancedColorKind::HighDynamicRange))
+	{
+		return;
+	}
+
+	// MaxCLL is nominally calculated for the single brightest pixel in a frame.
+	// But we take a slightly more conservative definition that takes the 99.99th percentile
+	// to account for extreme outliers in the image.
+	float maxCLLPercent = 0.9999f;
+
+	
+	m_d2dContext->BeginDraw();
+
+	m_d2dContext->DrawImage(m_histogramEffect.get());
+
+	// We ignore D2DERR_RECREATE_TARGET here. This error indicates that the device
+	// is lost. It will be handled during the next call to Present.
+	HRESULT hr = m_d2dContext->EndDraw();
+	if (hr != D2DERR_RECREATE_TARGET)
+	{
+		check_hresult(hr);
+	}
+
+	float *histogramData = new float[sc_histNumBins];
+	check_hresult(
+		m_histogramEffect->GetValue(D2D1_HISTOGRAM_PROP_HISTOGRAM_OUTPUT,
+			reinterpret_cast<BYTE*>(histogramData),
+			sc_histNumBins * sizeof(float)
+		)
+	);
+
+	unsigned int maxCLLbin = 0;
+	float runningSum = 0.0f; // Cumulative sum of values in histogram is 1.0.
+	for (int i = sc_histNumBins - 1; i >= 0; i--)
+	{
+		runningSum += histogramData[i];
+		maxCLLbin = i;
+
+		if (runningSum >= 1.0f - maxCLLPercent)
+		{
+			break;
+		}
+	}
+
+	float binNorm = static_cast<float>(maxCLLbin) / static_cast<float>(sc_histNumBins);
+	m_maxCLL = powf(binNorm, 1 / sc_histGamma) * sc_histMaxNits;
+
+	// Some drivers have a bug where histogram will always return 0. Treat this as unknown.
+	m_maxCLL = (m_maxCLL == 0.0f) ? -1.0f : m_maxCLL;
+}
+
 
 // Overrides any pan/zoom state set by the user to fit image to the window size.
 // Returns the computed MaxCLL of the image in nits.
@@ -689,11 +880,11 @@ float DirectXTileRenderer::FitImageToWindow(Size panelSize)
 			(panelSize.Height - (m_imageInfo.size.Height * m_zoom)) / 2.0f
 		);
 
-		//UpdateImageTransformState();
+		UpdateImageTransformState();
 
 		// HDR metadata is supposed to be independent of any rendering options, but
 		// we can't compute it until the full effect graph is hooked up, which is here.
-		//ComputeHdrMetadata();
+		ComputeHdrMetadata();
 	}
 
 	return m_maxCLL;

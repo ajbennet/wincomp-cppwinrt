@@ -78,6 +78,7 @@ private:
 	DesktopWindowTarget			m_target{ nullptr };
 	HWND						m_window = nullptr;
 	TileDrawingManager			m_TileDrawingManager;
+	DirectXTileRenderer			m_renderer;
 	CompositionPropertySet		m_animatingPropset = nullptr;
 	ExpressionAnimation			m_animateMatrix = nullptr;
 	ImageInfo					m_imageInfo;
