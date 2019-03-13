@@ -34,6 +34,12 @@ WinComp::~WinComp()
 	delete s_instance;
 }
 
+//
+//  FUNCTION: EnsureDispatcherQueue
+//
+//  PURPOSE: It is necessary for a DisptacherQueue to be available on the same thread in which
+//	the Compositor runs on. Events for the Compositor are fired using this DispatcherQueue
+//
 DispatcherQueueController WinComp::EnsureDispatcherQueue()
 {
 	namespace abi = ABI::Windows::System;
@@ -49,9 +55,13 @@ DispatcherQueueController WinComp::EnsureDispatcherQueue()
 	check_hresult(CreateDispatcherQueueController(options, reinterpret_cast<abi::IDispatcherQueueController**>(put_abi(controller))));
 
 	return controller;
-
 }
 
+//
+//  FUNCTION:CreateDesktopWindowTarget
+//
+//  PURPOSE:Creates a DesktoWindowTarget that can host Windows.UI.Composition Visual tree inside an HWnd
+//
 DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& compositor, HWND window)
 {
 	namespace abi = ABI::Windows::UI::Composition::Desktop;
@@ -62,6 +72,12 @@ DesktopWindowTarget WinComp::CreateDesktopWindowTarget(Compositor const& composi
 	return target;
 }
 
+
+//
+//  FUNCTION:Initialize
+//
+//  PURPOSE: Initializes all the key member variables, including the Compositor. This sample hosts directX content inside a visual 
+//
 void WinComp::Initialize(HWND hwnd)
 {
 	namespace abi = ABI::Windows::UI::Composition;
@@ -77,6 +93,7 @@ void WinComp::Initialize(HWND hwnd)
 
 void WinComp::TryRedirectForManipulation(PointerPoint pp)
 {
+	//Redirecting the Pointer input for manipulation by the InteractionTracker
 	m_interactionSource.TryRedirectForManipulation(pp);
 }
 
@@ -84,7 +101,11 @@ void WinComp::TryUpdatePositionBy(float3 const& amount)
 {
 	m_tracker.TryUpdatePositionBy(amount);
 }
-
+//
+//  FUNCTION: PrepareVisuals
+//
+//  PURPOSE: Creates the Visual tree and hooks it up to the desktopWindowTarget 
+//
 void WinComp::PrepareVisuals()
 {
 	m_target = CreateDesktopWindowTarget(m_compositor, m_window);
@@ -93,53 +114,36 @@ void WinComp::PrepareVisuals()
 	//Create a background with Gray color brush.
 	root.Brush(m_compositor.CreateColorBrush({ 0xFF, 0xFE, 0xFE , 0xFE }));
 
-	root.Size(getWindowSize());
+	root.Size(GetWindowSize());
 	m_target.Root(root);
 	
 	auto visuals = root.Children();
 	AddD2DVisual(visuals, 0.0f, 0.0f);
 }
 
-void WinComp::AddVisual(VisualCollection const& visuals, float x, float y)
-{
-	auto visual = m_compositor.CreateSpriteVisual();
-	static Color colors[] =
-	{
-		{ 0xDC, 0x5B, 0x9B, 0xD5 },
-		{ 0xDC, 0xFF, 0xC0, 0x00 },
-		{ 0xDC, 0xED, 0x7D, 0x31 },
-		{ 0xDC, 0x70, 0xAD, 0x47 },
-	};
-	static unsigned last = 0;
-	unsigned const next = ++last % _countof(colors);
-	visual.Brush(m_compositor.CreateColorBrush(colors[next]));
-	visual.Size(
-		{
-			100.0f,
-			100.0f
-		});
 
-	visual.Offset(
-		{
-			x,
-			y,
-			0.0f,
-		});
-	visuals.InsertAtTop(visual);
-}
-
+//
+//  FUNCTION: AddD2DVisual
+//
+//  PURPOSE: Creates a SurfaceBrush to host Direct2D content in this visual.
+//
 void WinComp::AddD2DVisual(VisualCollection const& visuals, float x, float y)
 {
 	auto compositor = visuals.Compositor();
 	m_contentVisual = compositor.CreateSpriteVisual();
 	m_contentVisual.Brush(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 
-	m_contentVisual.Size(getWindowSize());
+	m_contentVisual.Size(GetWindowSize());
 	m_contentVisual.Offset({ x, y, 0.0f, });
 
 	visuals.InsertAtTop(m_contentVisual);
 }
 
+//
+//  FUNCTION: UpdateViewPort
+//
+//  PURPOSE: This is called when the Viewport size has changed, because of events like maximize, resize window etc.
+//
 void WinComp::UpdateViewPort(boolean changeContentVisual)
 {
 	//return if the m_window hasn't been set.
@@ -149,7 +153,6 @@ void WinComp::UpdateViewPort(boolean changeContentVisual)
 		Size windowSize ;
 		windowSize.Height = (windowRect.bottom - windowRect.top)/m_lastTrackerScale;
 		windowSize.Width = (windowRect.right - windowRect.left)/m_lastTrackerScale;
-
 		
 		if(changeContentVisual){
 			m_contentVisual.Size(windowSize);
@@ -159,7 +162,12 @@ void WinComp::UpdateViewPort(boolean changeContentVisual)
 	}
 }
 
-Size WinComp::getWindowSize()
+//
+//  FUNCTION: GetWindowSize
+//
+//  PURPOSE: Helper function for get the size of the HWnd.
+//
+Size WinComp::GetWindowSize()
 {
 	RECT windowRect;
 	::GetWindowRect(m_window, &windowRect);
@@ -168,6 +176,11 @@ Size WinComp::getWindowSize()
 
 }
 
+//
+//  FUNCTION: StartAnimation
+//
+//  PURPOSE: Use CompositionPropertySet and Expression Animations to manipulate the Virtual Surface.
+//
 void WinComp::StartAnimation(CompositionSurfaceBrush brush)
 {
 	m_animatingPropset = m_compositor.CreatePropertySet();
@@ -186,6 +199,11 @@ void WinComp::StartAnimation(CompositionSurfaceBrush brush)
 	brush.StartAnimation(L"TransformMatrix", m_animateMatrix);
 }
 
+//
+//  FUNCTION: ConfigureInteraction
+//
+//  PURPOSE: Configure InteractionTracker on this visual, to enable touch, PTP and mousewheel based interactions.
+//
 void WinComp::ConfigureInteraction()
 {
 	m_interactionSource = VisualInteractionSource::Create(m_contentVisual);
@@ -194,7 +212,6 @@ void WinComp::ConfigureInteraction()
 	m_interactionSource.ScaleSourceMode(InteractionSourceMode::EnabledWithInertia);
 	m_interactionSource.ManipulationRedirectionMode(VisualInteractionSourceRedirectionMode::CapableTouchpadAndPointerWheel);
 
-	//IInteractionTrackerOwner itOwner = (auto &&) { make<WinComp>() };
 	m_tracker = InteractionTracker::CreateWithOwner(m_compositor, *this);
 	m_tracker.InteractionSources().Add(m_interactionSource);
 	
@@ -218,7 +235,7 @@ void WinComp::ConfigureInteraction()
 	StartAnimation(m_TileDrawingManager.getRenderer()->getSurfaceBrush());
 }
 
-// interactionTrackerowner
+// interactionTrackerowner methods.
 
 void WinComp::CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args)
 {
@@ -271,11 +288,3 @@ void WinComp::ValuesChanged(InteractionTracker sender, InteractionTrackerValuesC
 	//	Debug.WriteLine(ex.Message);
 	}
 }
-
-
-
-
-
-
-
-

@@ -68,9 +68,8 @@ private:
 
 	DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window);
 	void AddD2DVisual(VisualCollection const& visuals, float x, float y);
-	void AddVisual(VisualCollection const& visuals, float x, float y);
 	void StartAnimation(CompositionSurfaceBrush brush);
-	Size getWindowSize();
+	Size GetWindowSize();
 
 	//member variables
 	Compositor					m_compositor{ nullptr };
