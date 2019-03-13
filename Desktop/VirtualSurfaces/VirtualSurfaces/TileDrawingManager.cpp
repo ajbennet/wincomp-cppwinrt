@@ -16,7 +16,8 @@
 
 
 TileDrawingManager::TileDrawingManager()
-{
+{	
+
 }
 
 TileDrawingManager::~TileDrawingManager()
@@ -24,133 +25,40 @@ TileDrawingManager::~TileDrawingManager()
 }
 
 void TileDrawingManager::setRenderer(DirectXTileRenderer* renderer) {
-	currentRenderer = renderer;
+	m_currentRenderer = renderer;
 };
+
 DirectXTileRenderer* TileDrawingManager::getRenderer()
 {
-	return currentRenderer;
+	return m_currentRenderer;
 }
 
+//
+//  FUNCTION: UpdateVisibleRegion
+//
+//  PURPOSE: More unloaded surface is now visible on screen because of some event like manipulations(zoom, pan, etc.). This method, figures
+//	out the new areas that need to be rendered and fires the draw calls. This is the core of the tile drawing logic
+//
 void TileDrawingManager::UpdateVisibleRegion(float3 currentPosition)
 {
-	currentPosition = currentPosition;
+	m_currentPosition = currentPosition;
 	bool stateUpdate = false;
 
-	int requiredTopTileRow = max((int)currentPosition.y / TILESIZE - DrawAheadTileCount, 0);
-	int requiredBottomTileRow = (int)(currentPosition.y + viewPortSize.Height) / TILESIZE + DrawAheadTileCount;
-	int requiredLeftTileColumn = max((int)currentPosition.x / TILESIZE - DrawAheadTileCount, 0);
-	int requiredRightTileColumn = (int)(currentPosition.x + viewPortSize.Width) / TILESIZE + DrawAheadTileCount;
+	int requiredTopTileRow = max((int)m_currentPosition.y / TILESIZE - DrawAheadTileCount, 0);
+	int requiredBottomTileRow = (int)(m_currentPosition.y + m_viewPortSize.Height) / TILESIZE + DrawAheadTileCount;
+	int requiredLeftTileColumn = max((int)m_currentPosition.x / TILESIZE - DrawAheadTileCount, 0);
+	int requiredRightTileColumn = (int)(m_currentPosition.x + m_viewPortSize.Width) / TILESIZE + DrawAheadTileCount;
 
-	currentTopLeftTileRow = (int)currentPosition.y / TILESIZE;
-	currentTopLeftTileColumn = (int)currentPosition.x / TILESIZE;
-
-	for (int row = requiredTopTileRow; row < drawnTopTileRow; row++)
-	{
-		for (int column = drawnLeftTileColumn; column <= drawnRightTileColumn; column++)
-		{
-			DrawTile(row, column);
-			stateUpdate = true;
-			char msgbuf[1000];
-			sprintf_s(msgbuf, "UpdateVisibleRegion - Draw tile -  %d, %d, %d, %d \n", requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
-			OutputDebugStringA(msgbuf);
-		}
-	}
-
-	for (int row = drawnBottomTileRow + 1; row <= requiredBottomTileRow; row++)
-	{
-		for (int column = drawnLeftTileColumn; column <= drawnRightTileColumn; column++)
-		{
-			DrawTile(row, column);
-			stateUpdate = true;
-		}
-	}
-	drawnTopTileRow = min(requiredTopTileRow, drawnTopTileRow);
-	drawnBottomTileRow = max(requiredBottomTileRow, drawnBottomTileRow);
-
-
-	for (int column = requiredLeftTileColumn; column < drawnLeftTileColumn; column++)
-	{
-		for (int row = drawnTopTileRow; row <= drawnBottomTileRow; row++)
-		{
-			DrawTile(row, column);
-			stateUpdate = true;
-		}
-	}
-
-
-	for (int column = drawnRightTileColumn + 1; column <= requiredRightTileColumn; column++)
-	{
-		for (int row = drawnTopTileRow; row <= drawnBottomTileRow; row++)
-		{
-			DrawTile(row, column);
-			stateUpdate = true;
-		}
-	}
-
-	drawnLeftTileColumn = min(requiredLeftTileColumn, drawnLeftTileColumn);
-	drawnRightTileColumn = max(requiredRightTileColumn, drawnRightTileColumn);
-
-
-	//TODO: perf optimization to batch draw tile calls into a single drawingsession scope
-
-	//
-	// Consider doing something so that we don't draw tiles above that are simply going to get thrown away 
-	// down here - might be as simple as trimming 
-	//
-
-	if (stateUpdate)
-	{
-		Trim(requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "Trimming contentes outside of  %d, %d, %d, %d \n", requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
-		OutputDebugStringA(msgbuf);
-	}
-
-}
-
-void TileDrawingManager::UpdateVisibleRegionByRange(float3 currentPosition)
-{
-	currentPosition = currentPosition;
-	bool stateUpdate = false;
-
-	int requiredTopTileRow = max((int)currentPosition.y / TILESIZE - DrawAheadTileCount, 0);
-	int requiredBottomTileRow = (int)(currentPosition.y + viewPortSize.Height) / TILESIZE + DrawAheadTileCount;
-	int requiredLeftTileColumn = max((int)currentPosition.x / TILESIZE - DrawAheadTileCount, 0);
-	int requiredRightTileColumn = (int)(currentPosition.x + viewPortSize.Width) / TILESIZE + DrawAheadTileCount;
-
-	currentTopLeftTileRow = (int)currentPosition.y / TILESIZE;
-	currentTopLeftTileColumn = (int)currentPosition.x / TILESIZE;
-
-	for (int row = requiredTopTileRow; row < drawnTopTileRow; row++)
-	{
-		for (int column = drawnLeftTileColumn; column <= drawnRightTileColumn; column++)
-		{
-			//DrawTile(row, column);
-			stateUpdate = true;
-			
-		}
-	}
+	currentTopLeftTileRow = (int)m_currentPosition.y / TILESIZE;
+	currentTopLeftTileColumn = (int)m_currentPosition.x / TILESIZE;
 
 	int numberOfRows = (drawnTopTileRow - requiredTopTileRow );
 	int numberOfColumns = (drawnRightTileColumn-drawnLeftTileColumn )+1;
 	
 	if(numberOfRows>0 && numberOfColumns>0)
 	{
-		currentRenderer->DrawTileRange(GetRectForTileRange(drawnLeftTileColumn, requiredTopTileRow,   numberOfColumns, numberOfRows),
-				GetTilesForRange(drawnLeftTileColumn, requiredTopTileRow, numberOfColumns, numberOfRows));
+		DrawTileRange(drawnLeftTileColumn, requiredTopTileRow, numberOfColumns, numberOfRows);
 		stateUpdate = true;
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "UpdateVisibleRegionRegion - TileRange(drawnLeftTileColumn, requiredTopTileRow,   numberOfColumns, numberOfRows) -  %d, %d, %d, %d \n", drawnLeftTileColumn, requiredTopTileRow, numberOfColumns, numberOfRows);
-		OutputDebugStringA(msgbuf);
-	}
-
-	for (int row = drawnBottomTileRow + 1; row <= requiredBottomTileRow; row++)
-	{
-		for (int column = drawnLeftTileColumn; column <= drawnRightTileColumn; column++)
-		{
-			//DrawTile(row, column);
-			stateUpdate = true;
-		}
 	}
 
 	numberOfRows = (requiredBottomTileRow - drawnBottomTileRow);
@@ -158,47 +66,20 @@ void TileDrawingManager::UpdateVisibleRegionByRange(float3 currentPosition)
 
 	if (numberOfRows > 0 && numberOfColumns > 0)
 	{
-		currentRenderer->DrawTileRange(GetRectForTileRange(drawnLeftTileColumn, drawnBottomTileRow+1,  numberOfColumns, numberOfRows),
-			GetTilesForRange(drawnLeftTileColumn, drawnBottomTileRow+1, numberOfColumns, numberOfRows));
+		DrawTileRange(drawnLeftTileColumn, drawnBottomTileRow+1, numberOfColumns, numberOfRows);
 		stateUpdate = true;
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "UpdateVisibleRegionRegion - TileRange(drawnLeftTileColumn, drawnBottomTileRow+1,  numberOfColumns, numberOfRows) -  %d, %d, %d, %d \n", drawnLeftTileColumn, drawnBottomTileRow+1, numberOfColumns, numberOfRows);
-		OutputDebugStringA(msgbuf);
 	}
 
 	drawnTopTileRow = min(requiredTopTileRow, drawnTopTileRow);
 	drawnBottomTileRow = max(requiredBottomTileRow, drawnBottomTileRow);
-
-	for (int column = requiredLeftTileColumn; column < drawnLeftTileColumn; column++)
-	{
-		for (int row = drawnTopTileRow; row <= drawnBottomTileRow; row++)
-		{
-			//DrawTile(row, column);
-			stateUpdate = true;
-		}
-	}
 
 	numberOfRows = ( drawnBottomTileRow - drawnTopTileRow)+1;
 	numberOfColumns = (drawnLeftTileColumn - requiredLeftTileColumn) ;
 
 	if (numberOfRows > 0 && numberOfColumns > 0)
 	{
-		currentRenderer->DrawTileRange(GetRectForTileRange(requiredLeftTileColumn, drawnTopTileRow,  numberOfColumns, numberOfRows),
-			GetTilesForRange(requiredLeftTileColumn, drawnTopTileRow, numberOfColumns, numberOfRows));
+		DrawTileRange(requiredLeftTileColumn, drawnTopTileRow, numberOfColumns, numberOfRows);
 		stateUpdate = true;
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "UpdateVisibleRegionRegion - TileRange(requiredLeftTileColumn, drawnTopTileRow, numberOfColumns, numberOfRows) -  %d, %d, %d, %d \n", requiredLeftTileColumn, drawnTopTileRow, numberOfRows, numberOfColumns);
-		OutputDebugStringA(msgbuf);
-	}
-
-
-	for (int column = drawnRightTileColumn + 1; column <= requiredRightTileColumn; column++)
-	{
-		for (int row = drawnTopTileRow; row <= drawnBottomTileRow; row++)
-		{
-//			DrawTile(row, column);
-			stateUpdate = true;
-		}
 	}
 
 	numberOfRows = (drawnBottomTileRow - drawnTopTileRow)+1;
@@ -206,74 +87,67 @@ void TileDrawingManager::UpdateVisibleRegionByRange(float3 currentPosition)
 
 	if (numberOfRows > 0 && numberOfColumns > 0)
 	{
-		currentRenderer->DrawTileRange(GetRectForTileRange(drawnRightTileColumn + 1, drawnTopTileRow, numberOfColumns, numberOfRows),
-			GetTilesForRange(drawnRightTileColumn + 1, drawnTopTileRow, numberOfColumns, numberOfRows));
+		DrawTileRange(drawnRightTileColumn + 1, drawnTopTileRow, numberOfColumns, numberOfRows);
 		stateUpdate = true;
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "UpdateVisibleRegionRegion - TileRange(drawnLeftTileColumn+1, drawnTopTileRow, numberOfColumns, numberOfRows) -  %d, %d, %d, %d \n", drawnLeftTileColumn + 1, drawnTopTileRow, numberOfColumns, numberOfRows);
-		OutputDebugStringA(msgbuf);
 	}
 
 	drawnLeftTileColumn = min(requiredLeftTileColumn, drawnLeftTileColumn);
 	drawnRightTileColumn = max(requiredRightTileColumn, drawnRightTileColumn);
 
-
-	//TODO: perf optimization to batch draw tile calls into a single drawingsession scope
-
 	//
-	// Consider doing something so that we don't draw tiles above that are simply going to get thrown away 
-	// down here - might be as simple as trimming 
+	// Trimming the tiles that are not visible on screen
 	//
 
 	if (stateUpdate)
 	{
 		Trim(requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
-		char msgbuf[1000];
-		sprintf_s(msgbuf, "Trimming contentes outside of  %d, %d, %d, %d \n", requiredLeftTileColumn, requiredTopTileRow, requiredRightTileColumn, requiredBottomTileRow);
-		OutputDebugStringA(msgbuf);
 	}
-
 }
 
 
+//
+//  FUNCTION: GetTileForCoordinates
+//
+//  PURPOSE: Helper function that gets the tile object for a particular row and column combination.
+//
 void TileDrawingManager::UpdateViewportSize(Size newSize)
 {
-	viewPortSize = newSize;
+	m_viewPortSize = newSize;
 	horizontalVisibleTileCount = (int)ceil(newSize.Width / TILESIZE);
 	verticalVisibleTileCount = (int)ceil(newSize.Height / TILESIZE);
-	char msgbuf[1000];
-	sprintf_s(msgbuf, "ViewPortSize updated to %f,%f \n", newSize.Height, newSize.Width);
-	OutputDebugStringA(msgbuf);
-	memset(msgbuf, 0, 1000);
-	sprintf_s(msgbuf, "VisibleTileCount Horizonal : %d, Vertical : %d \n", horizontalVisibleTileCount, verticalVisibleTileCount);
-	OutputDebugStringA(msgbuf);
-	DrawVisibleTilesbyRange();
-	//DrawVisibleTiles();
+	DrawVisibleTilesByRange();
 }
 
-Rect TileDrawingManager::GetRectForTile(int row, int column)
-{
-	int x = column * TILESIZE;
-	int y = row * TILESIZE;
-	return Rect(x, y, TILESIZE, TILESIZE);
-	//TODO: refactor above to use below
-}
-
+//
+//  FUNCTION: GetTileForCoordinates
+//
+//  PURPOSE: Helper function that gets the tile object for a particular row and column combination.
+//
 Tile TileDrawingManager::GetTileForCoordinates(int row, int column)
 {
 	int x = column * TILESIZE;
 	int y = row * TILESIZE;
-	Rect rect(x, y, TILESIZE, TILESIZE);
+	Rect rect((float)x, (float)y, TILESIZE, TILESIZE);
 	return Tile{ rect,row,column };
 }
 
+//
+//  FUNCTION: GetRectForTileRange
+//
+//  PURPOSE: Gets the rect that needs to be updated for this range of tiles.
+//
 Rect TileDrawingManager::GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
 {
 	int x = tileStartColumn * TILESIZE;
 	int y = tileStartRow * TILESIZE;
-	return Rect(x, y, numColumns * TILESIZE, numRows * TILESIZE);
+	return Rect((float)x, (float)y, (float)(numColumns * TILESIZE), (float)(numRows * TILESIZE));
 }
 
+//
+//  FUNCTION: GetTilesForRange
+//
+//  PURPOSE: Converts the tile co-ordinates into a list of Tile Objects that can be sent to the renderer.
+//
 list<Tile> TileDrawingManager::GetTilesForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
 {
 	list<Tile> returnTiles;
@@ -287,55 +161,33 @@ list<Tile> TileDrawingManager::GetTilesForRange(int tileStartColumn, int tileSta
 	return returnTiles;
 }
 
-void TileDrawingManager::DrawVisibleTiles()
-{
-	//currentRenderer->StartDrawingSession();
-	//TODO: drawahead applied to left as well
-	const clock_t begin_time = std::clock();
-	
-	for (int row = 0; row < verticalVisibleTileCount + DrawAheadTileCount; row++)
-	{
-		for (int column = 0; column <horizontalVisibleTileCount + DrawAheadTileCount; column++)
-		{
-			DrawTile(row, column);
-		}
-	}
-	
-//	currentRenderer->EndDrawingSession();
-	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
-	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;
-	
-	char msgbuf[1000];
-	sprintf_s(msgbuf, "Time Taken %f \n", float(std::clock() - begin_time) / CLOCKS_PER_SEC);
-	OutputDebugStringA(msgbuf);
 
+void TileDrawingManager::DrawTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows) 
+{
+	m_currentRenderer->DrawTileRange(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows),
+		GetTilesForRange(tileStartColumn, tileStartRow, numColumns, numRows));
 }
 
-void TileDrawingManager::DrawVisibleTilesbyRange()
+
+//
+//  FUNCTION: DrawVisibleTilesByRange
+//
+//  PURPOSE: This function combines all the tiles into a single call, so the rendering is faster as opposed to calling BeginDraw on each tile.
+//
+void TileDrawingManager::DrawVisibleTilesByRange()
 {
-	//currentRenderer->StartDrawingSession();
-	const clock_t begin_time = std::clock();
+	DrawTileRange(0, 0, horizontalVisibleTileCount + DrawAheadTileCount, verticalVisibleTileCount + DrawAheadTileCount);
 
-	
-	currentRenderer->DrawTileRange(GetRectForTileRange(0,0, horizontalVisibleTileCount + DrawAheadTileCount, verticalVisibleTileCount + DrawAheadTileCount),
-				GetTilesForRange(0, 0, horizontalVisibleTileCount + DrawAheadTileCount, verticalVisibleTileCount + DrawAheadTileCount));
-
-	//	currentRenderer->EndDrawingSession();
 	drawnRightTileColumn = horizontalVisibleTileCount - 1 + DrawAheadTileCount;
 	drawnBottomTileRow = verticalVisibleTileCount - 1 + DrawAheadTileCount;
 
-	char msgbuf[1000];
-	sprintf_s(msgbuf, "Time Taken by draw range %f \n", float(std::clock() - begin_time) / CLOCKS_PER_SEC);
-	OutputDebugStringA(msgbuf);
-
 }
 
-
-void TileDrawingManager::DrawTile(int row, int column)
-{
-	currentRenderer->DrawTile(GetRectForTile(row, column), row, column); //index's are 0 based
-}
-
+//
+//  FUNCTION: Trim()
+//
+//  PURPOSE: Trims the tiles that are outside these co-ordinates. So only the contents that are visible are rendered, to save on memory.
+//
 void TileDrawingManager::Trim(int leftColumn, int topRow, int rightColumn, int bottomRow)
 {
 	auto trimRect = GetRectForTileRange(
@@ -344,7 +196,7 @@ void TileDrawingManager::Trim(int leftColumn, int topRow, int rightColumn, int b
 		rightColumn - leftColumn + 1,
 		bottomRow - topRow + 1);
 
-	currentRenderer->Trim(trimRect);
+	m_currentRenderer->Trim(trimRect);
 
 	drawnLeftTileColumn = leftColumn;
 	drawnRightTileColumn = rightColumn;

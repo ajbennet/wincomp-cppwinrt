@@ -13,10 +13,6 @@
 //*********************************************************
 #pragma once
 
-#include <string>
-#include <iostream>
-
-
 using namespace winrt;
 using namespace Windows::System;
 using namespace Windows::UI;
@@ -41,7 +37,6 @@ public:
 	DirectXTileRenderer();
 	~DirectXTileRenderer();
 	void Initialize(Compositor compositor, int tileSize);
-	void DrawTile(Rect rect, int tileRow, int tileColumn);
 	void DrawTile(com_ptr<::ID2D1DeviceContext> d2dDeviceContext,com_ptr<::ID2D1SolidColorBrush> m_textBrush, Tile tile, POINT offset);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
@@ -54,7 +49,7 @@ private:
 	com_ptr<ID2D1Factory1> CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type, com_ptr<ID3D11Device>& device);
 	com_ptr<ID3D11Device> CreateDevice();
-	CompositionSurfaceBrush CreateD2DBrush();
+	CompositionSurfaceBrush CreateVirtualDrawingSurfaceBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	bool CheckForDeviceRemoved(HRESULT hr);
 

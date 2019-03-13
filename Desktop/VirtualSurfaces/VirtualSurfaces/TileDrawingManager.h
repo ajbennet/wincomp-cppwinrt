@@ -14,10 +14,7 @@
 
 #pragma once
 
-#include <iostream>
-#include <ctime>
 #include "DirectXTileRenderer.h"
-
 
 using namespace std;
 using namespace winrt;
@@ -30,36 +27,36 @@ public:
 	TileDrawingManager();
 	~TileDrawingManager();
 	void UpdateVisibleRegion(float3 currentPosition);
-	void UpdateVisibleRegionByRange(float3 currentPosition);
 	void UpdateViewportSize(Size newSize);
 	void setRenderer(DirectXTileRenderer* renderer);
 	DirectXTileRenderer* getRenderer();
-	void DrawTile(int row, int column);
+
 	const static int TILESIZE = 250;
+
+
 
 private:
 	
-	static const int DRAWAHEAD = 0; //Number of tiles to draw ahead 
-	int currentTopLeftTileRow = 0;
-	int currentTopLeftTileColumn = 0;
-	int drawnTopTileRow = 0;
-	int drawnBottomTileRow = 0;
-	int drawnLeftTileColumn = 0;
-	int drawnRightTileColumn = 0;
-	Size viewPortSize;
-	int horizontalVisibleTileCount;
-	int verticalVisibleTileCount;
-	float3 currentPosition;
-	DirectXTileRenderer* currentRenderer;
-	int DrawAheadTileCount;
-	
-	
-	Rect GetRectForTile(int row, int column);
 	Tile GetTileForCoordinates(int row, int column);
 	list<Tile> GetTilesForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
-	void DrawVisibleTilesbyRange();
+	void DrawVisibleTilesByRange();
 	Rect GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
-	void DrawVisibleTiles();
 	void Trim(int leftColumn, int topRow, int rightColumn, int bottomRow);
+	void DrawTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
 
+	//member variables
+	static const int		DRAWAHEAD = 0; //Number of tiles to draw ahead 
+	int						currentTopLeftTileRow = 0;
+	int						currentTopLeftTileColumn = 0;
+	int						drawnTopTileRow = 0;
+	int						drawnBottomTileRow = 0;
+	int						drawnLeftTileColumn = 0;
+	int						drawnRightTileColumn = 0;
+	int						horizontalVisibleTileCount;
+	int						verticalVisibleTileCount;
+	Size					m_viewPortSize;
+	float3					m_currentPosition;
+	DirectXTileRenderer*	m_currentRenderer;
+	int						DrawAheadTileCount;
+	
 };
