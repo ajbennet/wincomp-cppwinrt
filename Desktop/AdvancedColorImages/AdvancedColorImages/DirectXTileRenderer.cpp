@@ -345,12 +345,14 @@ void DirectXTileRenderer::Draw(Rect rect)
 		if (m_scaledImage)
 		{
 			
-
 			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
 
 			D2D_POINT_2F d2dOffset{offset.x, offset.y};
+			D2D1_RECT_F clipRect{ offset.x , offset.y , offset.x + rect.Width / 2, offset.y + rect.Height / 2 };
 
+			d2dDeviceContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
 			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
+			d2dDeviceContext->PopAxisAlignedClip();
 			
 			//Generating colors to distinguish each tile.
 			//m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
