@@ -1,11 +1,18 @@
+//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+// THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//*********************************************************
 #include "stdafx.h"
 #include "DirectXTileRenderer.h"
-#include "WinComp.h"
-#include <string>
-#include <iostream>
-
-using namespace Windows::UI::Composition;
-
 
 static const float sc_MaxZoom = 1.0f; // Restrict max zoom to 1:1 scale.
 static const unsigned int sc_MaxBytesPerPixel = 16; // Covers all supported image formats.
@@ -18,30 +25,276 @@ static const unsigned int sc_histNumBins = 400;
 static const float        sc_histGamma = 0.1f;
 static const unsigned int sc_histMaxNits = 1000000;
 
-DirectXTileRenderer::DirectXTileRenderer()
-{
-
-}
-
-
-DirectXTileRenderer::~DirectXTileRenderer()
-{
-}
-
-void DirectXTileRenderer::Initialize() {
+//
+//  FUNCTION: Initialize
+//
+//  PURPOSE: Initializes all the necessary devices and structures needed for a DirectX Surface rendering operation.
+//
+void DirectXTileRenderer::Initialize(Compositor const& compositor, int tileSize, int surfaceSize) {
+	namespace abi = ABI::Windows::UI::Composition;
 	
+	m_compositor = compositor;
+	m_tileSize = tileSize;
+	m_surfaceSize = surfaceSize;
+	
+	InitializeTextFormat();
 	CreateDeviceIndependentResources();
-	InitializeTextLayout();
+	m_surfaceBrush = CreateVirtualDrawingSurfaceBrush();
 }
-
 
 CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 {
-	if (m_surfaceBrush == nullptr) {
-		m_surfaceBrush = CreateD2DBrush();
-	}
 	return m_surfaceBrush;
+}
 
+//
+//  FUNCTION: DrawTileRange
+//
+//  PURPOSE: This function iterates through a list of Tiles and draws them wihtin a single BeginDraw/EndDraw session for performance reasons. 
+//	OPTIMIZATION: This can fail when the surface to be drawn is really large in one go, expecially when the surface is zoomed in by a larger factor. 
+//
+bool DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> const& tiles)
+{
+	SIZE updateSize = { static_cast<LONG>(rect.Width - 5), static_cast<LONG>(rect.Height - 5) };
+	//making sure the update rect doesnt go past the maximum size of the surface.
+	RECT updateRect = { static_cast<LONG>(rect.X), static_cast<LONG>(rect.Y), static_cast<LONG>(min((rect.X + rect.Width),m_surfaceSize)), static_cast<LONG>(min((rect.Y + rect.Height),m_surfaceSize)) };
+
+	//Cannot update a surface larger than the max texture size of the hardware. 2048X2048 is the lowest max texture size for relevant hardware.
+	int MAXTEXTURESIZE = D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+	//3 is the buffer here.
+	SIZE constrainedUpdateSize = { min(updateSize.cx, MAXTEXTURESIZE - 3), min(updateSize.cy, MAXTEXTURESIZE - 3) };
+
+	float savedColorCounter = m_colorCounter;
+	//Breaking the BeginDraw/EndDraw calls to update rects that dont exceed the max texture size.
+	for (LONG y = updateRect.top; y < updateRect.bottom; y += constrainedUpdateSize.cy)
+	{
+		for (LONG x = updateRect.left; x < updateRect.right; x += constrainedUpdateSize.cx)
+		{
+			m_colorCounter = savedColorCounter;
+
+			POINT offset{};
+			RECT constrainedUpdateRect = RECT{ x,  y,  min(x + constrainedUpdateSize.cx, updateRect.right), min(y + constrainedUpdateSize.cy, updateRect.bottom) };
+			com_ptr<ID2D1DeviceContext> d2dDeviceContext;
+			com_ptr<ID2D1SolidColorBrush> textBrush;
+			com_ptr<ID2D1SolidColorBrush> tileBrush;
+
+			// Begin our update of the surface pixels. Passing nullptr to this call will update the entire surface. We only update the rect area that needs to be rendered.
+			if (!CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&constrainedUpdateRect, __uuidof(ID2D1DeviceContext), (void**)d2dDeviceContext.put(), &offset)))
+			{
+				return false;
+			}
+
+			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+
+			// Create a solid color brush for the text. Half alpha to make it more visually pleasing as it blends with the background color.
+			check_hresult(d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DimGray, 0.5f), textBrush.put()));
+
+			//Create a solid color brush for the tiles and which will be set to a different color before rendering.
+			check_hresult(d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 1.0f), tileBrush.put()));
+
+			//Get the offset difference that can be applied to every tile before drawing.
+			POINT differenceOffset{ (LONG)(offset.x - x), (LONG)(offset.y - y) };
+
+			//Iterate through the tiles and do DrawRectangle and DrawText calls on those.
+			for (Tile tile : tiles) {
+				DrawTile(d2dDeviceContext.get(), textBrush.get(), tileBrush.get(), tile, differenceOffset);
+			}
+			m_surfaceInterop->EndDraw();
+		}
+	}
+
+	return true;
+}
+
+//
+//  FUNCTION:DrawTile
+//
+//  PURPOSE: Core D2D/DWrite calls for drawing a rectangle and text on top of it.
+//  OPTIMIZATION: Pre-create the color brushes in the device instead of on every DrawTile call.
+//
+void DirectXTileRenderer::DrawTile(ID2D1DeviceContext* d2dDeviceContext, ID2D1SolidColorBrush* textBrush, ID2D1SolidColorBrush* tileBrush, Tile tile, POINT differenceOffset)
+{
+	//Generating colors to distinguish each tile. Some hardcoded math to generate different shades of green in an incremental fashion. 
+	//This makes the sample look better visually, no other functional reason for these particular numbers and the math itself.
+	m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
+	D2D1::ColorF randomColor(m_colorCounter / 256, 1.0f, 0.0f, 0.5f);
+	tileBrush->SetColor(randomColor);
+
+	float offsetUpdatedX = tile.rect.X + differenceOffset.x;
+	float offsetUpdatedY = tile.rect.Y + differenceOffset.y;
+	int borderMargin = 5;
+	D2D1_RECT_F tileRectangle{ offsetUpdatedX ,  offsetUpdatedY, offsetUpdatedX + tile.rect.Width - borderMargin, offsetUpdatedY + tile.rect.Height - borderMargin };
+	d2dDeviceContext->FillRectangle(tileRectangle, tileBrush);
+
+	DrawTextInTile(tile.row, tile.column, tileRectangle, d2dDeviceContext, textBrush);
+}
+
+//
+//  FUNCTION: CheckForDeviceRemoved
+//
+//  PURPOSE: We may detect device loss on BeginDraw calls. This helper handles this condition or other
+//  errors.
+//
+bool DirectXTileRenderer::CheckForDeviceRemoved(HRESULT hr)
+{
+	if (SUCCEEDED(hr))
+	{
+		// Everything is fine -- go ahead and draw
+		return true;
+	}
+	else if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+	{
+		// We can't draw at this time, but this failure is recoverable. Just skip drawing for
+		// now. We will be asked to draw again once the Direct3D device is recreated
+		return false;
+	}
+	// Any other error is unexpected and, therefore, fatal.
+	check_hresult(hr);
+	return true;
+}
+
+//
+//  FUNCTION:Trim
+//
+//  PURPOSE: Helper function that calls the trim on the virtualSurface
+//
+void DirectXTileRenderer::Trim(Rect trimRect)
+{
+	RectInt32 trimRects[1];
+	trimRects[0] = RectInt32{ (int)trimRect.X, (int)trimRect.Y, (int)trimRect.Width, (int)trimRect.Height };
+	m_virtualSurface.Trim(trimRects);
+}
+
+
+//
+//  FUNCTION: DrawText
+//
+//  PURPOSE: DirectWrite calls to draw the text "x,y" in the tile
+//
+void DirectXTileRenderer::DrawTextInTile(int tileRow, int tileColumn, D2D1_RECT_F rect, ID2D1DeviceContext* d2dDeviceContext,
+	ID2D1SolidColorBrush* textBrush)
+{
+	std::wstring text{ std::to_wstring(tileRow) + L"," + std::to_wstring(tileColumn) };
+	//Drawing the text in the second third of the rectangle, so it is centered. The centerRect is the new rectangle that is 1/3rd of the height and placed at the center of the Tile.
+	d2dDeviceContext->DrawText(text.c_str(), (uint32_t)text.size(), m_textFormat.get(), rect, textBrush);
+}
+
+//
+//  FUNCTION:InitializeTextFormat
+//
+//  PURPOSE: Creates the text format
+//
+void DirectXTileRenderer::InitializeTextFormat()
+{
+	check_hresult(::DWriteCreateFactory(
+		DWRITE_FACTORY_TYPE_SHARED,
+		__uuidof(m_dWriteFactory),
+		reinterpret_cast<::IUnknown * *>(m_dWriteFactory.put())));
+
+	check_hresult(m_dWriteFactory->CreateTextFormat(
+		L"Segoe UI",
+		nullptr,
+		DWRITE_FONT_WEIGHT_BOLD,
+		DWRITE_FONT_STYLE_NORMAL,
+		DWRITE_FONT_STRETCH_NORMAL,
+		60.f,
+		L"en-US",
+		m_textFormat.put()));
+	m_textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+	m_textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+}
+
+//
+//  FUNCTION:CreateFactory
+//
+//  PURPOSE: Utility function to create the D2DFactory 
+//
+void DirectXTileRenderer::CreateFactory()
+{
+	D2D1_FACTORY_OPTIONS options{};
+	
+	check_hresult(D2D1CreateFactory(
+		D2D1_FACTORY_TYPE_SINGLE_THREADED,
+		options,
+		m_d2dFactory.put()));
+
+	
+}
+
+//
+//  FUNCTION:CreateDevice
+//
+//  PURPOSE: Utility function to create the D3D11 device
+//
+HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type)
+{
+	WINRT_ASSERT(!m_d3dDevice);
+
+	return D3D11CreateDevice(
+		nullptr,
+		type,
+		nullptr,
+		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+		nullptr, 0,
+		D3D11_SDK_VERSION,
+		m_d3dDevice.put(),
+		nullptr,
+		nullptr);
+}
+
+void DirectXTileRenderer::CreateDevice()
+{
+	HRESULT hr = CreateDevice(D3D_DRIVER_TYPE_HARDWARE);
+
+	if (DXGI_ERROR_UNSUPPORTED == hr)
+	{
+		hr = CreateDevice(D3D_DRIVER_TYPE_WARP);
+	}
+
+	check_hresult(hr);
+}
+
+//
+//  FUNCTION: CreateVirtualDrawingSurface
+//
+//  PURPOSE: Creates a VirtualDrawingSurface into which the D2D contents will be drawn.
+//
+CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeInt32 size)
+{
+	auto graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
+
+	m_virtualSurface = graphicsDevice2.CreateVirtualDrawingSurface(
+		size,
+		DirectXPixelFormat::B8G8R8A8UIntNormalized,
+		DirectXAlphaMode::Premultiplied);
+
+	return m_virtualSurface;
+}
+
+//
+//  FUNCTION: CreateVirtualDrawingSurfaceBrush
+//
+//  PURPOSE: Creates a VirtualDrawingSurface into which the D2D contents will be drawn. Returns a CompositionSurfaceBrush that can be applied to a Composition Visual.
+//
+CompositionSurfaceBrush DirectXTileRenderer::CreateVirtualDrawingSurfaceBrush()
+{
+	//Virtual Surface's maximum size is 2^24, per dimension. In this sample the size will never exceed the m_surfaceSize (In this case it is 10000*TILESIZE).
+	SizeInt32 size;
+	size.Width = m_surfaceSize;
+	size.Height = m_surfaceSize;
+
+	m_surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
+
+	ICompositionSurface surface = m_surfaceInterop.as<ICompositionSurface>();
+
+	CompositionSurfaceBrush surfaceBrush = m_compositor.CreateSurfaceBrush(surface);
+
+	surfaceBrush.Stretch(CompositionStretch::None);
+	surfaceBrush.HorizontalAlignmentRatio(0);
+	surfaceBrush.VerticalAlignmentRatio(0);
+	surfaceBrush.TransformMatrix(make_float3x2_translation(20.0f, 20.0f));
+
+	return surfaceBrush;
 }
 
 // White level scale is used to multiply the color values in the image; allows the user to
@@ -57,7 +310,7 @@ void DirectXTileRenderer::SetRenderOptions(
 	m_renderEffectKind = effect;
 	m_brightnessAdjust = brightnessAdjustment;
 
-	auto sdrWhite = m_dispInfo ?  m_dispInfo.SdrWhiteLevelInNits(): sc_nominalRefWhite;
+	auto sdrWhite = m_dispInfo ? m_dispInfo.SdrWhiteLevelInNits() : sc_nominalRefWhite;
 
 	UpdateWhiteLevelScale(m_brightnessAdjust, sdrWhite);
 
@@ -66,7 +319,7 @@ void DirectXTileRenderer::SetRenderOptions(
 	// after the effect as their numerical output is affected by any luminance boost.
 	switch (m_renderEffectKind)
 	{
-	
+
 		// Effect graph: ImageSource > ColorManagement > WhiteScale
 	case RenderEffectKind::None:
 		m_whiteScaleEffect.as(m_finalOutput);
@@ -121,7 +374,7 @@ void DirectXTileRenderer::UpdateWhiteLevelScale(float brightnessAdjustment, floa
 // independent.
 ImageInfo DirectXTileRenderer::LoadImageFromWic(_In_ IStream* imageStream)
 {
-	
+
 	// Decode the image using WIC.
 	com_ptr<IWICBitmapDecoder> decoder;
 	check_hresult(
@@ -146,28 +399,28 @@ ImageInfo DirectXTileRenderer::LoadImageFromWic(_In_ IStream* imageStream)
 ImageInfo DirectXTileRenderer::LoadImageFromWic(LPCWSTR szFileName)
 {
 
-		// Create a decoder
-		IWICBitmapDecoder *pDecoder = nullptr;
+	// Create a decoder
+	IWICBitmapDecoder* pDecoder = nullptr;
 
-		// Decode the image using WIC.
-		com_ptr<IWICBitmapDecoder> decoder;
-		check_hresult(
-			m_wicFactory->CreateDecoderFromFilename(
-				szFileName,                      // Image to be decoded
-				nullptr,                         // Do not prefer a particular vendor
-				GENERIC_READ,                    // Desired read access to the file
-				WICDecodeMetadataCacheOnDemand,  // Cache metadata when needed
-				decoder.put()					 // Pointer to the decoder
-			));
+	// Decode the image using WIC.
+	com_ptr<IWICBitmapDecoder> decoder;
+	check_hresult(
+		m_wicFactory->CreateDecoderFromFilename(
+			szFileName,                      // Image to be decoded
+			nullptr,                         // Do not prefer a particular vendor
+			GENERIC_READ,                    // Desired read access to the file
+			WICDecodeMetadataCacheOnDemand,  // Cache metadata when needed
+			decoder.put()					 // Pointer to the decoder
+		));
 
 
-		// Retrieve the first frame of the image from the decoder
-		com_ptr<IWICBitmapFrameDecode> frame;
-		check_hresult(
-			decoder->GetFrame(0, frame.put())
-		);
+	// Retrieve the first frame of the image from the decoder
+	com_ptr<IWICBitmapFrameDecode> frame;
+	check_hresult(
+		decoder->GetFrame(0, frame.put())
+	);
 
-		return LoadImageCommon(frame.get());
+	return LoadImageCommon(frame.get());
 
 }
 
@@ -183,13 +436,13 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 	com_ptr<IWICBitmapFrameDecode> frame;
 	HRESULT hr = (reinterpret_cast<::IUnknown*>(source)->QueryInterface(winrt::guid_of<IWICBitmapFrameDecode>(),
 		reinterpret_cast<void**>(winrt::put_abi(frame))));
-	if (hr>=0)
+	if (hr >= 0)
 	{
 		check_hresult(
 			m_wicFactory->CreateColorContext(m_wicColorContext.put())
 		);
 
-		IWICColorContext * temp = m_wicColorContext.get();
+		IWICColorContext* temp = m_wicColorContext.get();
 
 		check_hresult(
 			frame->GetColorContexts(
@@ -217,7 +470,7 @@ ImageInfo DirectXTileRenderer::LoadImageCommon(_In_ IWICBitmapSource* source)
 	);
 
 	com_ptr<IWICPixelFormatInfo2> pixelFormatInfo = componentInfo.as<IWICPixelFormatInfo2>();
-	
+
 
 	WICPixelFormatNumericRepresentation formatNumber;
 	check_hresult(
@@ -338,22 +591,22 @@ void DirectXTileRenderer::Draw(Rect rect)
 	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
 	// any time we make an update we touch the entire surface, so we always pass nullptr).
 	winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
-	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)d2dDeviceContext.put(), &offset))) {
+	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void**)d2dDeviceContext.put(), &offset))) {
 
 		d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
-		
+
 		if (m_scaledImage)
 		{
-			
+
 			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
 
-			D2D_POINT_2F d2dOffset{offset.x, offset.y};
+			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
 			D2D1_RECT_F clipRect{ offset.x , offset.y , offset.x + rect.Width / 2, offset.y + rect.Height / 2 };
 
 			d2dDeviceContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
 			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
 			d2dDeviceContext->PopAxisAlignedClip();
-			
+
 			//Generating colors to distinguish each tile.
 			//m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
 			//D2D1::ColorF randomColor(m_colorCounter / 256, 1.0f, 0.0f, 0.5f);
@@ -406,234 +659,20 @@ void DirectXTileRenderer::UpdateImageTransformState()
 
 
 
-void DirectXTileRenderer::DrawTile(Rect rect, int tileRow, int tileColumn)
-{
-	POINT offset;
-	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width-5),  static_cast<LONG>(rect.Y + rect.Height-5)};
-	// Begin our update of the surface pixels. If this is our first update, we are required
-	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
-	// any time we make an update we touch the entire surface, so we always pass nullptr).
-	winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext;
-	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush;
-	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void **)m_d2dDeviceContext.put(), &offset))) {
-
-	m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
-	// Create a solid color brush for the text. A more sophisticated application might want
-	// to cache and reuse a brush across all text elements instead, taking care to recreate
-	// it in the event of device removed.
-	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF::DimGray, 1.0f), m_textBrush.put()));
-
-	//Generating colors to distinguish each tile.
-	m_colorCounter = (int)(m_colorCounter+8) % 192 + 8.0f;
-	D2D1::ColorF randomColor( m_colorCounter/256, 1.0f, 0.0f, 0.5f);
-	D2D1_RECT_F tileRectangle{ offset.x , offset.y , offset.x + rect.Width, offset.y  + rect.Height };
-
-	winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
-	//Draw the rectangle
-	winrt::check_hresult(m_d2dDeviceContext->CreateSolidColorBrush(
-		randomColor, tilebrush.put()));
-
-	m_d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
-	/*char msgbuf[1000];
-	sprintf_s(msgbuf, "Rect %f,%f,%f,%f \n", tileRectangle.left, tileRectangle.top, tileRectangle.right, tileRectangle.bottom);
-	OutputDebugStringA(msgbuf);
-	memset(msgbuf, 0, 1000);
-	sprintf_s(msgbuf, "Tile coordinates : %d,%d \n", tileRow, tileColumn);
-	OutputDebugStringA(msgbuf);
-	memset(msgbuf, 0, 1000);
-	sprintf_s(msgbuf, "Offset %ld,%ld\n", offset.x, offset.y);
-	OutputDebugStringA(msgbuf);
-	*/
-	DrawText(tileRow, tileColumn, tileRectangle,  m_d2dDeviceContext, m_textBrush);
-
-	m_surfaceInterop->EndDraw();
-	}
-
-}
 
 
-// We may detect device loss on BeginDraw calls. This helper handles this condition or other
-// errors.
-bool DirectXTileRenderer::CheckForDeviceRemoved(HRESULT hr)
-{
-	if (SUCCEEDED(hr))
-	{
-		// Everything is fine -- go ahead and draw
-		return true;
-	}
-	else if (hr == DXGI_ERROR_DEVICE_REMOVED)
-	{
-		// We can't draw at this time, but this failure is recoverable. Just skip drawing for
-		// now. We will be asked to draw again once the Direct3D device is recreated
-		return false;
-	}
-	else
-	{
-		// Any other error is unexpected and, therefore, fatal
-		//TODO:: FailFast();
-	}
-}
-
-void DirectXTileRenderer::Trim(Rect trimRect)
-{
-	RectInt32 trimRects[1];
-	trimRects[0] = RectInt32{ (int)trimRect.X, (int)trimRect.Y, (int)trimRect.Width, (int)trimRect.Height };
-	
-	m_virtualSurfaceBrush.Trim(trimRects);
-}
-
-float DirectXTileRenderer::random(int maxValue) {
-
-	return rand() % maxValue;
-
-}
-
-// Renders the text into our composition surface
-void DirectXTileRenderer::DrawText(int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,
-	winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush)
-{
-	
-	std::wstring text{ std::to_wstring(tileRow) + L"," + std::to_wstring(tileColumn)  };
-
-	winrt::com_ptr<::IDWriteTextLayout> textLayout;
-	winrt::check_hresult(
-		m_dWriteFactory->CreateTextLayout(
-			text.c_str(),
-			(uint32_t)text.size(),
-			m_textFormat.get(),
-			60,
-			30,
-			textLayout.put()
-		)
-	);
-
-	// Draw the line of text at the specified offset, which corresponds to the top-left
-	// corner of our drawing surface. Notice we don't call BeginDraw on the D2D device
-	// context; this has already been done for us by the composition API.
-	//position the text in the center as much as possible.
-	m_d2dDeviceContext->DrawTextLayout(D2D1::Point2F((float)rect.left + (TileDrawingManager::TILESIZE / 2 - 30), (float)rect.top+(TileDrawingManager::TILESIZE/2-30)), textLayout.get(),
-		m_textBrush.get());
-
-}
-
-void DirectXTileRenderer::InitializeTextLayout()
-{
-	
-	winrt::check_hresult(
-		::DWriteCreateFactory(
-			DWRITE_FACTORY_TYPE_SHARED,
-			__uuidof(m_dWriteFactory),
-			reinterpret_cast<::IUnknown**>(m_dWriteFactory.put())
-		)
-	);
-
-	winrt::check_hresult(
-		m_dWriteFactory->CreateTextFormat(
-			L"Segoe UI",
-			nullptr,
-			DWRITE_FONT_WEIGHT_REGULAR,
-			DWRITE_FONT_STYLE_NORMAL,
-			DWRITE_FONT_STRETCH_NORMAL,
-			30.f,
-			L"en-US",
-			m_textFormat.put()
-		)
-	);
-
-}
-
-void DirectXTileRenderer::CreateFactory()
-{
-	D2D1_FACTORY_OPTIONS options{};
-	com_ptr<ID2D1Factory1> factory;
-
-	check_hresult(D2D1CreateFactory(
-		D2D1_FACTORY_TYPE_SINGLE_THREADED,
-		options,
-		m_d2dFactory.put()));
-
-}
-
-HRESULT DirectXTileRenderer::CreateDevice(D3D_DRIVER_TYPE const type)
-{
-	WINRT_ASSERT(!m_d3dDevice);
-
-	return D3D11CreateDevice(
-		nullptr,
-		type,
-		nullptr,
-		D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-		nullptr, 0,
-		D3D11_SDK_VERSION,
-		m_d3dDevice.put(),
-		nullptr,
-		nullptr);
-}
-
-void DirectXTileRenderer::CreateDevice()
-{
-	HRESULT hr = CreateDevice(D3D_DRIVER_TYPE_HARDWARE);
-
-	if (DXGI_ERROR_UNSUPPORTED == hr)
-	{
-		hr = CreateDevice(D3D_DRIVER_TYPE_WARP);
-	}
-
-	check_hresult(hr);
-}
-
-CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeInt32 size)
-{
-	auto graphicsDevice2 = m_graphicsDevice.as<ICompositionGraphicsDevice2>();
-
-	m_virtualSurfaceBrush = graphicsDevice2.CreateVirtualDrawingSurface(
-		size,
-		DirectXPixelFormat::B8G8R8A8UIntNormalized,
-		DirectXAlphaMode::Premultiplied);
-
-	return m_virtualSurfaceBrush;
-}
-
-CompositionSurfaceBrush DirectXTileRenderer::CreateD2DBrush()
-{
-	namespace abi = ABI::Windows::UI::Composition;
-
-	SizeInt32 size;
-	size.Width = WinComp::TILESIZE * 10000;
-	size.Height = WinComp::TILESIZE * 10000;
-
-	m_surfaceInterop = CreateVirtualDrawingSurface(size).as<abi::ICompositionDrawingSurfaceInterop>();
-
-
-	ICompositionSurface surface = m_surfaceInterop.as<ICompositionSurface>();
-
-	CompositionSurfaceBrush surfaceBrush = m_compositor.CreateSurfaceBrush(surface);
-	surfaceBrush.Stretch(CompositionStretch::None);
-
-	surfaceBrush.HorizontalAlignmentRatio(0);
-	surfaceBrush.VerticalAlignmentRatio(0);
-	surfaceBrush.TransformMatrix(make_float3x2_translation(20.0f, 20.0f));
-
-	return surfaceBrush;
-}
 
 void DirectXTileRenderer::CreateDeviceIndependentResources()
 {
-
 	namespace abi = ABI::Windows::UI::Composition;
 
 	CreateFactory();
 	CreateDevice();
 	com_ptr<IDXGIDevice> const dxdevice = m_d3dDevice.as<IDXGIDevice>();
-
-	//TODO: move this out, so renderer is abstracted completely
-	m_compositor = WinComp::GetInstance()->m_compositor;
-
 	com_ptr<abi::ICompositorInterop> interopCompositor = m_compositor.as<abi::ICompositorInterop>();
-	
+
 	check_hresult(m_d2dFactory->CreateDevice(dxdevice.get(), m_d2dDevice.put()));
-	check_hresult(interopCompositor->CreateGraphicsDevice(m_d2dDevice.get(), reinterpret_cast<abi::ICompositionGraphicsDevice**>(put_abi(m_graphicsDevice))));
+	check_hresult(interopCompositor->CreateGraphicsDevice(m_d2dDevice.get(), reinterpret_cast<abi::ICompositionGraphicsDevice * *>(put_abi(m_graphicsDevice))));
 	check_hresult(
 		CoCreateInstance(
 			CLSID_WICImagingFactory2,
@@ -656,14 +695,14 @@ void DirectXTileRenderer::EmitHdrMetadata()
 		// This sample doesn't do any chrominance (e.g. xy) gamut mapping, so just use default
 		// color primaries values; a more sophisticated app will explicitly set these.
 		// DXGI_HDR_METADATA_HDR10 defines primaries as 1/50000 of a unit in xy space.
-		metadata.RedPrimary[0] = static_cast<UINT16>(m_dispInfo.RedPrimary.X   * 50000.0f);
-		metadata.RedPrimary[1] = static_cast<UINT16>(m_dispInfo.RedPrimary.Y   * 50000.0f);
-		metadata.GreenPrimary[0] = static_cast<UINT16>(m_dispInfo.GreenPrimary.X * 50000.0f);
-		metadata.GreenPrimary[1] = static_cast<UINT16>(m_dispInfo.GreenPrimary.Y * 50000.0f);
-		metadata.BluePrimary[0] = static_cast<UINT16>(m_dispInfo.BluePrimary.X  * 50000.0f);
-		metadata.BluePrimary[1] = static_cast<UINT16>(m_dispInfo.BluePrimary.Y  * 50000.0f);
-		metadata.WhitePoint[0] = static_cast<UINT16>(m_dispInfo.WhitePoint.X   * 50000.0f);
-		metadata.WhitePoint[1] = static_cast<UINT16>(m_dispInfo.WhitePoint.Y   * 50000.0f);
+		metadata.RedPrimary[0] = static_cast<UINT16>(m_dispInfo.RedPrimary().X   * 50000.0f);
+		metadata.RedPrimary[1] = static_cast<UINT16>(m_dispInfo.RedPrimary().Y   * 50000.0f);
+		metadata.GreenPrimary[0] = static_cast<UINT16>(m_dispInfo.GreenPrimary().X * 50000.0f);
+		metadata.GreenPrimary[1] = static_cast<UINT16>(m_dispInfo.GreenPrimary().Y * 50000.0f);
+		metadata.BluePrimary[0] = static_cast<UINT16>(m_dispInfo.BluePrimary().X  * 50000.0f);
+		metadata.BluePrimary[1] = static_cast<UINT16>(m_dispInfo.BluePrimary().Y  * 50000.0f);
+		metadata.WhitePoint[0] = static_cast<UINT16>(m_dispInfo.WhitePoint().X   * 50000.0f);
+		metadata.WhitePoint[1] = static_cast<UINT16>(m_dispInfo.WhitePoint().Y   * 50000.0f);
 
 		float effectiveMaxCLL = 0;
 
@@ -704,7 +743,7 @@ void DirectXTileRenderer::CreateImageDependentResources()
 	com_ptr<IDXGIDevice3> dxgiDevice;
 	dxgiDevice = m_d3dDevice.as<IDXGIDevice3>();
 
-	
+
 	com_ptr<ID2D1Device5>            d2dDevice;
 	d2dDevice = m_d2dDevice.as<ID2D1Device5>();
 
@@ -821,7 +860,7 @@ void DirectXTileRenderer::ComputeHdrMetadata()
 	// to account for extreme outliers in the image.
 	float maxCLLPercent = 0.9999f;
 
-	
+
 	m_d2dContext->BeginDraw();
 
 	m_d2dContext->DrawImage(m_histogramEffect.get());
@@ -834,7 +873,7 @@ void DirectXTileRenderer::ComputeHdrMetadata()
 		check_hresult(hr);
 	}
 
-	float *histogramData = new float[sc_histNumBins];
+	float* histogramData = new float[sc_histNumBins];
 	check_hresult(
 		m_histogramEffect->GetValue(D2D1_HISTOGRAM_PROP_HISTOGRAM_OUTPUT,
 			reinterpret_cast<BYTE*>(histogramData),
@@ -890,4 +929,18 @@ float DirectXTileRenderer::FitImageToWindow(Size panelSize)
 	}
 
 	return m_maxCLL;
+}
+
+//
+//  FUNCTION: Constructor for Tile Struct
+//
+//  PURPOSE: Creates a Tile object based on rows and columns
+//
+Tile::Tile(int lrow, int lcolumn, int tileSize)
+{
+	int x = lcolumn * tileSize;
+	int y = lrow * tileSize;
+	row = lrow;
+	column = lcolumn;
+	rect = Rect((float)x, (float)y, tileSize, tileSize);
 }

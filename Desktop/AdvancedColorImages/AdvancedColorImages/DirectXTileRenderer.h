@@ -1,6 +1,17 @@
+//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
+// THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//*********************************************************
 #pragma once
-
-#include "stdafx.h"
 
 using namespace winrt;
 using namespace Windows::System;
@@ -12,6 +23,8 @@ using namespace Windows::Graphics::Display;
 using namespace Windows::Graphics::DirectX;
 using namespace Windows::Foundation;
 using namespace Windows::Foundation::Numerics;
+
+namespace abi = ABI::Windows::UI::Composition;
 
 struct ImageInfo
 {
@@ -37,31 +50,35 @@ enum class RenderEffectKind
 	//LuminanceHeatmap
 };
 
+struct Tile
+{
+	Tile(int row, int column, int tileSize);
+	Rect rect;
+	int row;
+	int column;
+};
+
 class DirectXTileRenderer
 {
 public:
-	DirectXTileRenderer();
-	~DirectXTileRenderer();
-	void Initialize();
-	void DrawTile(Rect rect, int tileRow, int tileColumn);
+	void Initialize(Compositor const& compositor, int tileSize, int surfaceSize);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
+	bool DrawTileRange(Rect rect, std::list<Tile> const& tiles);
 	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo, Size windowSize);
 	float FitImageToWindow(Size panelSize);
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
 	ImageInfo LoadImageFromWic(LPCWSTR szFileName);
 	void CreateImageDependentResources();
 
-
 private:
-	float random(int maxValue);
-	//void LoadImage(_In_ StorageFile const& imageFile);
-	void DrawText( int tileRow, int tileColumn, D2D1_RECT_F rect, winrt::com_ptr<::ID2D1DeviceContext> m_d2dDeviceContext,winrt::com_ptr<::ID2D1SolidColorBrush> m_textBrush);
-	void InitializeTextLayout();
+	void DrawTile(ID2D1DeviceContext* d2dDeviceContext, ID2D1SolidColorBrush* textBrush, ID2D1SolidColorBrush* tileBrush, Tile tile, POINT differenceOffset);
+	void DrawTextInTile(int tileRow, int tileColumn, D2D1_RECT_F rect, ID2D1DeviceContext* d2dDeviceContext, ID2D1SolidColorBrush* textBrush);
+	void InitializeTextFormat();
 	void CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type);
 	void CreateDevice();
-	CompositionSurfaceBrush CreateD2DBrush();
+	CompositionSurfaceBrush CreateVirtualDrawingSurfaceBrush();
 	CompositionDrawingSurface CreateVirtualDrawingSurface(SizeInt32 size);
 	bool CheckForDeviceRemoved(HRESULT hr);
 	void UpdateImageTransformState();
@@ -74,20 +91,20 @@ private:
 	void UpdateImageColorContext();
 	void ComputeHdrMetadata();
 
-
 	//member variables
-	com_ptr<::IDWriteFactory>				m_dWriteFactory;
-	com_ptr<ID2D1DeviceContext5>			m_d2dContext;
-	com_ptr<::IDWriteTextFormat>			m_textFormat;
-	com_ptr<ICompositionGraphicsDevice>		m_graphicsDevice = nullptr;
-	com_ptr<ICompositionGraphicsDevice2>	m_graphicsDevice2 = nullptr;
-	CompositionVirtualDrawingSurface		m_virtualSurfaceBrush = nullptr;
-	CompositionSurfaceBrush					m_surfaceBrush = nullptr;
-	Compositor								m_compositor = nullptr;
-	float									m_colorCounter = 0.0;
-	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop = nullptr;
+	com_ptr<IDWriteFactory>                 m_dWriteFactory;
+	com_ptr<ID2D1DeviceContext5>            m_d2dContext;
+	com_ptr<IDWriteTextFormat>              m_textFormat;
+	com_ptr<ICompositionGraphicsDevice>     m_graphicsDevice;
+	com_ptr<ICompositionGraphicsDevice2>    m_graphicsDevice2;
+	CompositionVirtualDrawingSurface        m_virtualSurface = nullptr;
+	CompositionSurfaceBrush                 m_surfaceBrush = nullptr;
+	Compositor                              m_compositor = nullptr;
+	float                                   m_colorCounter = 0.0;
+	int                                     m_tileSize = 0;
+	int                                     m_surfaceSize = 0;
+	com_ptr<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop> m_surfaceInterop;
 
-	
 	// WIC and Direct2D resources.
 	com_ptr<ID3D11Device>					 m_d3dDevice;
 	com_ptr<ID2D1Device>					 m_d2dDevice;
@@ -119,4 +136,3 @@ private:
 	ImageInfo                               m_imageInfo;
 	bool                                    m_isComputeSupported;
 };
-
