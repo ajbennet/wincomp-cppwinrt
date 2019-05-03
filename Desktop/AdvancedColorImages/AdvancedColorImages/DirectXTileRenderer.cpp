@@ -589,7 +589,7 @@ CompositionDrawingSurface DirectXTileRenderer::CreateVirtualDrawingSurface(SizeI
 
 	m_virtualSurfaceBrush = graphicsDevice2.CreateVirtualDrawingSurface(
 		size,
-		DirectXPixelFormat::B8G8R8A8UIntNormalized,
+		DirectXPixelFormat::R16G16B16A16Float,
 		DirectXAlphaMode::Premultiplied);
 
 	return m_virtualSurfaceBrush;
