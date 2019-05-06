@@ -261,7 +261,7 @@ void WinComp::UpdateDefaultRenderOptions()
 // Common method for updating options on the renderer.
 void WinComp::UpdateRenderOptions()
 {
-	m_dxRenderer.SetRenderOptions(
+	m_dxRenderer->SetRenderOptions(
 		RenderEffectKind::None,
 		static_cast<float>(3),
 		m_dispInfo,
@@ -309,14 +309,9 @@ IAsyncAction WinComp::OpenFilePicker(HWND hwnd)
 void WinComp::LoadImageFromFileName(LPCWSTR szFileName)
 {
 
-	ImageInfo info{ m_dxRenderer.LoadImageFromWic(szFileName) };
-
-
-	m_dxRenderer.CreateImageDependentResources();
-
-
-	m_dxRenderer.FitImageToWindow(GetWindowSize());
-
+	ImageInfo info{ m_dxRenderer->LoadImageFromWic(szFileName) };
+	m_dxRenderer->CreateImageDependentResources();
+	m_dxRenderer->FitImageToWindow(GetWindowSize());
 	// Image loading is done at this point.
 	m_isImageValid = true;
 	UpdateDefaultRenderOptions();
@@ -329,7 +324,7 @@ IAsyncOperation<int> WinComp::LoadImageFromFile(StorageFile  imageFile)
 
 	com_ptr<IStream> iStream{ nullptr };
 	check_hresult(CreateStreamOverRandomAccessStream(winrt::get_unknown(ras), __uuidof(iStream), iStream.put_void()));
-	ImageInfo info{ m_dxRenderer.LoadImageFromWic(iStream.get()) };
+	ImageInfo info{ m_dxRenderer->LoadImageFromWic(iStream.get()) };
 
 	// Image loading is done at this point.
 	m_isImageValid = true;

@@ -150,6 +150,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	UpdateWindow(m_childHWnd);
 	m_winComp->Initialize(m_childHWnd);
 	m_winComp->PrepareVisuals();
+	//m_winComp->LoadImageFromFileName(L"D:\\Repos\\wincomp-cppwinrt\\Desktop\\AdvancedColorImages\\AdvancedColorImages\\hdr-image.jpg");
 	//m_winComp->UpdateViewPort(true);
 	//m_winComp->ConfigureInteraction();
 

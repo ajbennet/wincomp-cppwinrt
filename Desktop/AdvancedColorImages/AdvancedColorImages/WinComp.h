@@ -78,7 +78,7 @@ private:
 	InteractionTracker          m_tracker{ nullptr };
 	DesktopWindowTarget         m_target{ nullptr };
 	HWND                        m_window = nullptr;
-	DirectXTileRenderer*        m_dxRenderer = nullptr;
+	DirectXTileRenderer*        m_dxRenderer;
 
 	//animation member variables
 	ExpressionAnimation         m_moveSurfaceExpressionAnimation{ nullptr };
