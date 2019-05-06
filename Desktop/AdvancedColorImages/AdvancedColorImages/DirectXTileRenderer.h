@@ -65,7 +65,8 @@ public:
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
 	bool DrawTileRange(Rect rect, std::list<Tile> const& tiles);
-	void Draw(Rect rect);
+	bool DrawTileRange(Rect rect);
+	void Draw(Rect rect, Rect clipRect);
 	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo, Size windowSize);
 	float FitImageToWindow(Size panelSize);
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);

@@ -149,11 +149,22 @@ list<Tile> TileDrawingManager::GetTilesForRange(int tileStartColumn, int tileSta
 }
 
 
+//
+//  FUNCTION: GetClipRectForRange
+//
+//  PURPOSE: Converts the tile coordinates into a list of Tile Objects that can be sent to the renderer.
+//
+Rect TileDrawingManager::GetClipRectForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
+{
+	return Rect((float)tileStartColumn*TILESIZE, (float)tileStartRow*TILESIZE, (float)(numColumns * TILESIZE), (float)(numRows * TILESIZE));
+}
+
 void TileDrawingManager::DrawTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
 {
 	//m_currentRenderer->DrawTileRange(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows), GetTilesForRange(tileStartColumn, tileStartRow, numColumns, numRows));
+	m_currentRenderer->DrawTileRange(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows));
 
-	m_currentRenderer->Draw(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows));
+	//m_currentRenderer->Draw(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows), GetClipRectForRange(tileStartColumn, tileStartRow, numColumns, numRows));
 }
 
 

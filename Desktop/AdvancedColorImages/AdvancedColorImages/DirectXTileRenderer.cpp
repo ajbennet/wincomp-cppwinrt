@@ -47,6 +47,47 @@ CompositionSurfaceBrush DirectXTileRenderer::getSurfaceBrush()
 	return m_surfaceBrush;
 }
 
+void DirectXTileRenderer::Draw(Rect rect, Rect clipRect)
+{
+	POINT offset;
+	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width),  static_cast<LONG>(rect.Y + rect.Height) };
+	// Begin our update of the surface pixels. If this is our first update, we are required
+	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
+	// any time we make an update we touch the entire surface, so we always pass nullptr).
+	winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
+	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void**)d2dDeviceContext.put(), &offset))) {
+
+		d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+
+		if (m_scaledImage)
+		{
+			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+
+			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
+			D2D1_RECT_F clipD2DRect{ clipRect.X , clipRect.Y , clipRect.X + clipRect.Width, clipRect.Y + clipRect.Height };
+			//Get the offset difference that can be applied to every tile before drawing.
+			POINT differenceOffset{ (LONG)(offset.x - rect.X), (LONG)(offset.y - rect.Y) };
+			float offsetUpdatedX = rect.X + offset.x;
+			float offsetUpdatedY = rect.Y + offset.y;
+			int borderMargin = 5;
+			com_ptr<ID2D1SolidColorBrush> tileBrush;
+			//Create a solid color brush for the tiles and which will be set to a different color before rendering.
+			check_hresult(d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 1.0f), tileBrush.put()));
+			D2D1_RECT_F tileRectangle{ offsetUpdatedX ,  offsetUpdatedY, offsetUpdatedX + rect.Width - borderMargin, offsetUpdatedY + rect.Height - borderMargin };
+
+			/*d2dDeviceContext->PushAxisAlignedClip(clipD2DRect, D2D1_ANTIALIAS_MODE_ALIASED);
+			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
+			d2dDeviceContext->PopAxisAlignedClip();*/
+			d2dDeviceContext->DrawRectangle(tileRectangle, tileBrush.get(), 3.0f);
+			//EmitHdrMetadata();
+		}
+		check_hresult(d2dDeviceContext->Flush());
+		m_surfaceInterop->EndDraw();
+	}
+
+}
+
+
 //
 //  FUNCTION: DrawTileRange
 //
@@ -105,6 +146,75 @@ bool DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> const& tiles)
 
 	return true;
 }
+
+//
+//  FUNCTION: DrawTileRange
+//
+//  PURPOSE: This function iterates through a list of Tiles and draws them wihtin a single BeginDraw/EndDraw session for performance reasons. 
+//	OPTIMIZATION: This can fail when the surface to be drawn is really large in one go, expecially when the surface is zoomed in by a larger factor. 
+//
+bool DirectXTileRenderer::DrawTileRange(Rect rect)
+{
+	SIZE updateSize = { static_cast<LONG>(rect.Width - 5), static_cast<LONG>(rect.Height - 5) };
+	//making sure the update rect doesnt go past the maximum size of the surface.
+	RECT updateRect = { static_cast<LONG>(rect.X), static_cast<LONG>(rect.Y), static_cast<LONG>(min((rect.X + rect.Width),m_surfaceSize)), static_cast<LONG>(min((rect.Y + rect.Height),m_surfaceSize)) };
+
+	//Cannot update a surface larger than the max texture size of the hardware. 2048X2048 is the lowest max texture size for relevant hardware.
+	int MAXTEXTURESIZE = D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
+	//3 is the buffer here.
+	SIZE constrainedUpdateSize = { min(updateSize.cx, MAXTEXTURESIZE - 3), min(updateSize.cy, MAXTEXTURESIZE - 3) };
+
+	float savedColorCounter = m_colorCounter;
+	//Breaking the BeginDraw/EndDraw calls to update rects that dont exceed the max texture size.
+	for (LONG y = updateRect.top; y < updateRect.bottom; y += constrainedUpdateSize.cy)
+	{
+		for (LONG x = updateRect.left; x < updateRect.right; x += constrainedUpdateSize.cx)
+		{
+			m_colorCounter = savedColorCounter;
+
+			POINT offset{};
+			RECT constrainedUpdateRect = RECT{ x,  y,  min(x + constrainedUpdateSize.cx, updateRect.right), min(y + constrainedUpdateSize.cy, updateRect.bottom) };
+			com_ptr<ID2D1DeviceContext> d2dDeviceContext;
+			com_ptr<ID2D1SolidColorBrush> textBrush;
+			com_ptr<ID2D1SolidColorBrush> tileBrush;
+
+			// Begin our update of the surface pixels. Passing nullptr to this call will update the entire surface. We only update the rect area that needs to be rendered.
+			if (!CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&constrainedUpdateRect, __uuidof(ID2D1DeviceContext), (void**)d2dDeviceContext.put(), &offset)))
+			{
+				return false;
+			}
+
+			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
+
+			// Create a solid color brush for the text. Half alpha to make it more visually pleasing as it blends with the background color.
+			check_hresult(d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DimGray, 0.5f), textBrush.put()));
+
+			//Create a solid color brush for the tiles and which will be set to a different color before rendering.
+			check_hresult(d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 1.0f), tileBrush.put()));
+
+			//Get the offset difference that can be applied to every tile before drawing.
+			POINT differenceOffset{ (LONG)(offset.x - x), (LONG)(offset.y - y) };
+
+			float offsetUpdatedX = rect.X + differenceOffset.x;
+			float offsetUpdatedY = rect.Y + differenceOffset.y;
+			int borderMargin = 5;
+			
+			D2D1_RECT_F tileRectangle{ offsetUpdatedX ,  offsetUpdatedY, offsetUpdatedX + rect.Width - borderMargin, offsetUpdatedY + rect.Height - borderMargin };
+
+			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
+			d2dDeviceContext->PushAxisAlignedClip(tileRectangle, D2D1_ANTIALIAS_MODE_ALIASED);
+			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
+			d2dDeviceContext->PopAxisAlignedClip();
+
+			d2dDeviceContext->DrawRectangle(tileRectangle, tileBrush.get(), 3.0f);
+			
+			m_surfaceInterop->EndDraw();
+		}
+	}
+
+	return true;
+}
+
 
 //
 //  FUNCTION:DrawTile
@@ -583,36 +693,6 @@ void DirectXTileRenderer::PopulateImageInfoACKind(_Inout_ ImageInfo* info)
 	}
 }
 
-void DirectXTileRenderer::Draw(Rect rect)
-{
-	POINT offset;
-	RECT updateRect = RECT{ static_cast<LONG>(rect.X),  static_cast<LONG>(rect.Y),  static_cast<LONG>(rect.X + rect.Width - 5),  static_cast<LONG>(rect.Y + rect.Height - 5) };
-	// Begin our update of the surface pixels. If this is our first update, we are required
-	// to specify the entire surface, which nullptr is shorthand for (but, as it works out,
-	// any time we make an update we touch the entire surface, so we always pass nullptr).
-	winrt::com_ptr<::ID2D1DeviceContext> d2dDeviceContext;
-	if (CheckForDeviceRemoved(m_surfaceInterop->BeginDraw(&updateRect, __uuidof(ID2D1DeviceContext), (void**)d2dDeviceContext.put(), &offset))) {
-
-		d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
-
-		if (m_scaledImage)
-		{
-
-			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
-
-			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
-			D2D1_RECT_F clipRect{ offset.x , offset.y , offset.x + rect.Width, offset.y + rect.Height };
-
-			d2dDeviceContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
-			d2dDeviceContext->PopAxisAlignedClip();
-			//EmitHdrMetadata();
-		}
-		check_hresult(d2dDeviceContext->Flush());
-		m_surfaceInterop->EndDraw();
-	}
-
-}
 
 // Call this after updating any spatial transform state to regenerate the effect graph.
 void DirectXTileRenderer::UpdateImageTransformState()
@@ -897,7 +977,7 @@ float DirectXTileRenderer::FitImageToWindow(Size panelSize)
 
 		//m_zoom = min(sc_MaxZoom, letterboxZoom);
 		//Hardcoding to 1 zoom. TODO: Fix this.
-		m_zoom = 1.0f;
+		m_zoom = 0.5f;
 
 		// Center the image.
 		m_imageOffset = D2D1::Point2F(

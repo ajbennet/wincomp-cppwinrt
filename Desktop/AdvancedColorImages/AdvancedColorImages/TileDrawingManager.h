@@ -33,13 +33,14 @@ public:
 
 	const static int TILESIZE = 250;
 	const static int MAXSURFACESIZE = TILESIZE * 10000;
-	const static int DRAWAHEADTILECOUNT = 1; //Number of tiles to draw ahead 
+	const static int DRAWAHEADTILECOUNT = 0; //Number of tiles to draw ahead 
 
 private:
 
 	list<Tile> GetTilesForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
 	void DrawVisibleTilesByRange();
 	Rect GetRectForTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
+	Rect GetClipRectForRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
 	void Trim(int leftColumn, int topRow, int rightColumn, int bottomRow);
 	void DrawTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows);
 
