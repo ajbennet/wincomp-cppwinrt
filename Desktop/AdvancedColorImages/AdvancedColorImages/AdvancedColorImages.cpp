@@ -122,6 +122,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	HWND hWndParent = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
+	//SetWindowPos(hWndParent, HWND_TOPMOST, 0, 0, 300, 300, SWP_SHOWWINDOW);
 	if (!hWndParent)
 	{
 		return FALSE;
@@ -150,10 +151,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	UpdateWindow(m_childHWnd);
 	m_winComp->Initialize(m_childHWnd);
 	m_winComp->PrepareVisuals();
-	//m_winComp->LoadImageFromFileName(L"D:\\Repos\\wincomp-cppwinrt\\Desktop\\AdvancedColorImages\\AdvancedColorImages\\hdr-image.jpg");
-	//m_winComp->UpdateViewPort(true);
-	//m_winComp->ConfigureInteraction();
-
+	m_winComp->ConfigureInteraction();
+	m_winComp->LoadImageFromFileName(L"D:\\Repos\\wincomp-cppwinrt\\Desktop\\AdvancedColorImages\\AdvancedColorImages\\hdr-image.jpg");
+	m_winComp->UpdateViewPort(true);
 	return TRUE;
 }
 
@@ -166,15 +166,15 @@ bool LocateImageFile(HWND hWnd, LPWSTR pszFileName, DWORD cchFileName)
 
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = hWnd;
-	ofn.lpstrFilter = L"All Image Files\0"					L"*.bmp;*.dib;*.wdp;*.mdp;*.hdp;*.gif;*.png;*.jpg;*.jpeg;*.tif;*.ico;*.jxr\0"
-		L"JPEG File Interchange Format\0"		L"*.jpg;*.jpeg\0"
+	ofn.lpstrFilter = L"All Image Files\0"	L"*.bmp;*.dib;*.wdp;*.mdp;*.hdp;*.gif;*.png;*.jpg;*.jpeg;*.tif;*.ico;*.jxr\0"
+		L"JPEG File Interchange Format\0"	L"*.jpg;*.jpeg\0"
 		L"JPEG XR Extented Range Format\0"	L"*.jxr\0"
 		L"Windows Bitmap\0"					L"*.bmp;*.dib\0"
 		L"High Definition Photo\0"			L"*.wdp;*.mdp;*.hdp\0"
-		L"Graphics Interchange Format\0"		L"*.gif\0"
+		L"Graphics Interchange Format\0"	L"*.gif\0"
 		L"Portable Network Graphics\0"		L"*.png\0"
 		L"Tiff File\0"						L"*.tif\0"
-		L"Icon\0"								L"*.ico\0"
+		L"Icon\0"							L"*.ico\0"
 		L"All Files\0"						L"*.*\0"
 		L"\0";
 	ofn.lpstrFile = pszFileName;

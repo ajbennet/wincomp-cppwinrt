@@ -65,6 +65,7 @@ public:
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
 	bool DrawTileRange(Rect rect, std::list<Tile> const& tiles);
+	void Draw(Rect rect);
 	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo, Size windowSize);
 	float FitImageToWindow(Size panelSize);
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
@@ -87,7 +88,6 @@ private:
 	ImageInfo LoadImageCommon(_In_ IWICBitmapSource* source);
 	void PopulateImageInfoACKind(_Inout_ ImageInfo* info);
 	void EmitHdrMetadata();
-	void Draw(Rect rect);
 	void UpdateImageColorContext();
 	void ComputeHdrMetadata();
 

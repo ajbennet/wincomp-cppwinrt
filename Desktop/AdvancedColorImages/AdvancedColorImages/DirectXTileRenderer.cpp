@@ -328,7 +328,7 @@ void DirectXTileRenderer::SetRenderOptions(
 
 	}
 
-	Draw(Rect(0, 0, windowSize.Width, windowSize.Height));
+	//
 }
 
 // When connected to an HDR display, the OS renders SDR content (e.g. 8888 UNORM) at
@@ -601,23 +601,11 @@ void DirectXTileRenderer::Draw(Rect rect)
 			d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Red, 0.f));
 
 			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
-			D2D1_RECT_F clipRect{ offset.x , offset.y , offset.x + rect.Width / 2, offset.y + rect.Height / 2 };
+			D2D1_RECT_F clipRect{ offset.x , offset.y , offset.x + rect.Width, offset.y + rect.Height };
 
 			d2dDeviceContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
 			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
 			d2dDeviceContext->PopAxisAlignedClip();
-
-			//Generating colors to distinguish each tile.
-			//m_colorCounter = (int)(m_colorCounter + 8) % 192 + 8.0f;
-			//D2D1::ColorF randomColor(m_colorCounter / 256, 1.0f, 0.0f, 0.5f);
-			//D2D1_RECT_F tileRectangle{ offset.x , offset.y , offset.x + rect.Width, offset.y + rect.Height };
-
-			//winrt::com_ptr<::ID2D1SolidColorBrush> tilebrush;
-			////Draw the rectangle
-			//winrt::check_hresult(d2dDeviceContext->CreateSolidColorBrush(
-			//	randomColor, tilebrush.put()));
-
-			//d2dDeviceContext->FillRectangle(tileRectangle, tilebrush.get());
 			//EmitHdrMetadata();
 		}
 		check_hresult(d2dDeviceContext->Flush());
@@ -654,12 +642,6 @@ void DirectXTileRenderer::UpdateImageTransformState()
 		m_colorManagementEffect->SetInput(0, m_scaledImage.get());
 	}
 }
-
-
-
-
-
-
 
 
 void DirectXTileRenderer::CreateDeviceIndependentResources()
@@ -913,7 +895,9 @@ float DirectXTileRenderer::FitImageToWindow(Size panelSize)
 			panelSize.Width / m_imageInfo.size.Width,
 			panelSize.Height / m_imageInfo.size.Height);
 
-		m_zoom = min(sc_MaxZoom, letterboxZoom);
+		//m_zoom = min(sc_MaxZoom, letterboxZoom);
+		//Hardcoding to 1 zoom. TODO: Fix this.
+		m_zoom = 1.0f;
 
 		// Center the image.
 		m_imageOffset = D2D1::Point2F(
