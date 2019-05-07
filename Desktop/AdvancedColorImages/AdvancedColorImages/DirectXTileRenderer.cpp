@@ -197,12 +197,15 @@ bool DirectXTileRenderer::DrawTileRange(Rect rect)
 
 			float offsetUpdatedX = rect.X + differenceOffset.x;
 			float offsetUpdatedY = rect.Y + differenceOffset.y;
-			int borderMargin = 5;
+			int borderMargin = 1;
 			
 			D2D1_RECT_F tileRectangle{ offsetUpdatedX ,  offsetUpdatedY, offsetUpdatedX + rect.Width - borderMargin, offsetUpdatedY + rect.Height - borderMargin };
+			D2D1_RECT_F clipRectangle{ offsetUpdatedX+300 ,  offsetUpdatedY+300, offsetUpdatedX + rect.Width +300- borderMargin, offsetUpdatedY +300+ rect.Height - borderMargin };
+			//D2D1_RECT_F clipRectangle{ static_cast<LONG>(rect.X), static_cast<LONG>(rect.Y), static_cast<LONG>(min((rect.X + rect.Width),m_surfaceSize)), static_cast<LONG>(min((rect.Y + rect.Height),m_surfaceSize)) };
+
 
 			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
-			d2dDeviceContext->PushAxisAlignedClip(tileRectangle, D2D1_ANTIALIAS_MODE_ALIASED);
+			d2dDeviceContext->PushAxisAlignedClip(clipRectangle, D2D1_ANTIALIAS_MODE_ALIASED);
 			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
 			d2dDeviceContext->PopAxisAlignedClip();
 
@@ -435,10 +438,7 @@ void DirectXTileRenderer::SetRenderOptions(
 		m_whiteScaleEffect.as(m_finalOutput);
 		m_whiteScaleEffect->SetInputEffect(0, m_colorManagementEffect.get());
 		break;
-
 	}
-
-	//
 }
 
 // When connected to an HDR display, the OS renders SDR content (e.g. 8888 UNORM) at
