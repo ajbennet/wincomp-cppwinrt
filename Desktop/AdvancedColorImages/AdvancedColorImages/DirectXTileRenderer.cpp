@@ -192,25 +192,17 @@ bool DirectXTileRenderer::DrawTileRange(Rect rect)
 			//Create a solid color brush for the tiles and which will be set to a different color before rendering.
 			check_hresult(d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 1.0f), tileBrush.put()));
 
-			//Get the offset difference that can be applied to every tile before drawing.
-			POINT differenceOffset{ (LONG)(offset.x - x), (LONG)(offset.y - y) };
+			// Set a transform to draw into this section of the virtual surface using the input coordate space
+			d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Translation((FLOAT)(offset.x - x), (FLOAT)(offset.y - y)));
 
-			float offsetUpdatedX = rect.X + differenceOffset.x;
-			float offsetUpdatedY = rect.Y + differenceOffset.y;
-			int borderMargin = 1;
-			
-			D2D1_RECT_F tileRectangle{ offsetUpdatedX ,  offsetUpdatedY, offsetUpdatedX + rect.Width - borderMargin, offsetUpdatedY + rect.Height - borderMargin };
-			D2D1_RECT_F clipRectangle{ offsetUpdatedX+300 ,  offsetUpdatedY+300, offsetUpdatedX + rect.Width +300- borderMargin, offsetUpdatedY +300+ rect.Height - borderMargin };
-			//D2D1_RECT_F clipRectangle{ static_cast<LONG>(rect.X), static_cast<LONG>(rect.Y), static_cast<LONG>(min((rect.X + rect.Width),m_surfaceSize)), static_cast<LONG>(min((rect.Y + rect.Height),m_surfaceSize)) };
+			D2D1_RECT_F d2dRect = { constrainedUpdateRect.left, constrainedUpdateRect.top, constrainedUpdateRect.right, constrainedUpdateRect.bottom };
 
-
-			D2D_POINT_2F d2dOffset{ offset.x, offset.y };
-			d2dDeviceContext->PushAxisAlignedClip(clipRectangle, D2D1_ANTIALIAS_MODE_ALIASED);
-			d2dDeviceContext->DrawImage(m_finalOutput.get(), d2dOffset);
+			d2dDeviceContext->PushAxisAlignedClip(d2dRect, D2D1_ANTIALIAS_MODE_ALIASED);
+			d2dDeviceContext->DrawImage(m_finalOutput.get());
 			d2dDeviceContext->PopAxisAlignedClip();
 
-			d2dDeviceContext->DrawRectangle(tileRectangle, tileBrush.get(), 3.0f);
-			
+			//d2dDeviceContext->DrawRectangle(d2dRect, tileBrush.get(), 3.0f);
+
 			m_surfaceInterop->EndDraw();
 		}
 	}
@@ -977,7 +969,7 @@ float DirectXTileRenderer::FitImageToWindow(Size panelSize)
 
 		//m_zoom = min(sc_MaxZoom, letterboxZoom);
 		//Hardcoding to 1 zoom. TODO: Fix this.
-		m_zoom = 0.5f;
+		m_zoom = 1.0f;
 
 		// Center the image.
 		m_imageOffset = D2D1::Point2F(
