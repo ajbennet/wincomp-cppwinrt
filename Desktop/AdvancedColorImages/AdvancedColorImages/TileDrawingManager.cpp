@@ -162,7 +162,7 @@ Rect TileDrawingManager::GetClipRectForRange(int tileStartColumn, int tileStartR
 void TileDrawingManager::DrawTileRange(int tileStartColumn, int tileStartRow, int numColumns, int numRows)
 {
 	//m_currentRenderer->DrawTileRange(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows), GetTilesForRange(tileStartColumn, tileStartRow, numColumns, numRows));
-	m_currentRenderer->DrawTileRange(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows));
+	m_currentRenderer->DrawTile(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows));
 
 	//m_currentRenderer->Draw(GetRectForTileRange(tileStartColumn, tileStartRow, numColumns, numRows), GetClipRectForRange(tileStartColumn, tileStartRow, numColumns, numRows));
 }

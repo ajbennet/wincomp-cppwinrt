@@ -64,9 +64,7 @@ public:
 	void Initialize(Compositor const& compositor, int tileSize, int surfaceSize);
 	void Trim(Rect trimRect);
 	CompositionSurfaceBrush getSurfaceBrush();
-	bool DrawTileRange(Rect rect, std::list<Tile> const& tiles);
-	bool DrawTileRange(Rect rect);
-	void Draw(Rect rect, Rect clipRect);
+	bool DrawTile(Rect rect);
 	void SetRenderOptions(RenderEffectKind effect, float brightnessAdjustment, AdvancedColorInfo const& acInfo, Size windowSize);
 	float FitImageToWindow(Size panelSize);
 	ImageInfo LoadImageFromWic(_In_ IStream* imageStream);
@@ -74,8 +72,6 @@ public:
 	void CreateImageDependentResources();
 
 private:
-	void DrawTile(ID2D1DeviceContext* d2dDeviceContext, ID2D1SolidColorBrush* textBrush, ID2D1SolidColorBrush* tileBrush, Tile tile, POINT differenceOffset);
-	void DrawTextInTile(int tileRow, int tileColumn, D2D1_RECT_F rect, ID2D1DeviceContext* d2dDeviceContext, ID2D1SolidColorBrush* textBrush);
 	void InitializeTextFormat();
 	void CreateFactory();
 	HRESULT CreateDevice(D3D_DRIVER_TYPE const type);
