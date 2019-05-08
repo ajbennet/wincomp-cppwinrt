@@ -155,9 +155,9 @@ bool DirectXTileRenderer::DrawTileRange(Rect rect, std::list<Tile> const& tiles)
 //
 bool DirectXTileRenderer::DrawTileRange(Rect rect)
 {
-	SIZE updateSize = { static_cast<LONG>(rect.Width - 5), static_cast<LONG>(rect.Height - 5) };
 	//making sure the update rect doesnt go past the maximum size of the surface.
 	RECT updateRect = { static_cast<LONG>(rect.X), static_cast<LONG>(rect.Y), static_cast<LONG>(min((rect.X + rect.Width),m_surfaceSize)), static_cast<LONG>(min((rect.Y + rect.Height),m_surfaceSize)) };
+	SIZE updateSize = { updateRect.right - updateRect.left, updateRect.bottom - updateRect.top };
 
 	//Cannot update a surface larger than the max texture size of the hardware. 2048X2048 is the lowest max texture size for relevant hardware.
 	int MAXTEXTURESIZE = D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
@@ -201,7 +201,7 @@ bool DirectXTileRenderer::DrawTileRange(Rect rect)
 			d2dDeviceContext->DrawImage(m_finalOutput.get());
 			d2dDeviceContext->PopAxisAlignedClip();
 
-			//d2dDeviceContext->DrawRectangle(d2dRect, tileBrush.get(), 3.0f);
+			d2dDeviceContext->DrawRectangle(d2dRect, tileBrush.get(), 3.0f);
 
 			m_surfaceInterop->EndDraw();
 		}
